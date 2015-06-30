@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-import k2spin.stats as stats
+import k2spin.utils as utils
 
 def trim(time, flux, unc_flux):
     """Remove infs, NaNs, and negative flux values.
@@ -45,7 +45,7 @@ def sigma_clip(time, flux, unc_flux, clip_at=6):
     """
 
     # Compute statistics on the lightcurve
-    med, stdev  = stat.stats(flux, unc_flux)
+    med, stdev  = utils.stats(flux, unc_flux)
 
     # Sigma-clip the lightcurve
     to_clip = np.where(abs(flux-med)>(stdev*clip_at))[0]
@@ -84,7 +84,7 @@ def prep_lc(time, flux, unc_flux, clip_at=6):
         c_time, c_flux, c_unc = t_time, t_flux, t_unc
 
     # Calculate statistics on lightcurve
-    c_med, c_stdev = stat.stats(c_flux, c_unc)
+    c_med, c_stdev = utils.stats(c_flux, c_unc)
 
     # Return cleaned lightcurve and statistics
     return c_time, c_flux, c_unc, c_med, c_stdev

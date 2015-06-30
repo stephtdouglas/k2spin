@@ -4,6 +4,8 @@ import logging
 
 import numpy as np
 
+import k2spin.utils as utils
+
 def pre_whiten(time, flux, unc_flux, period, phase_window):
     """Phase a lightcurve and then smooth it.
 
@@ -19,6 +21,7 @@ def pre_whiten(time, flux, unc_flux, period, phase_window):
     """
 
     # phase the LC by the period
+    phased_time = utils.phase(time, flux, unc_flux, period)
 
     # sort the phases
 
@@ -26,7 +29,6 @@ def pre_whiten(time, flux, unc_flux, period, phase_window):
 
     # loop through and construct the moving average
 
-    pass
 
 
 def period_cleaner(time, flux, unc_flux, min_prot, max_prot, 
