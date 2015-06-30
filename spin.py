@@ -15,6 +15,11 @@ def prep_lc(time, flux, unc_flux):
 
     pass
 
+def phase(time, flux, unc_flux, period):
+    """Phase the input lightcurve by the input period."""
+    # This should probably go in a different module, but I'm not sure where...
+
+    pass
 
 def init_test(time, flux, unc_flux, object_id):
     """Pre-whiten and detrend the lightcurve, and decide whether 
