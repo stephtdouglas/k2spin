@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-def lc_stats(time, flux, unc_flux):
+def stats(time, flux, unc_flux):
     """Compute lightcurve statistics.
 
     Inputs
@@ -13,12 +13,13 @@ def lc_stats(time, flux, unc_flux):
 
     Outputs
     -------
-    lc_med, lc_std: float
+    lc_med, lc_std: floats
 
     """
 
     # Compute median and StDev
+    lc_med = np.median(flux)
+    lc_std = np.std(flux)
 
-    # Return them
-
+    return lc_med, lc_std
 
