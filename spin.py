@@ -4,17 +4,6 @@ import logging
 
 import numpy as np
 
-def prep_lc(time, flux, unc_flux):
-    """Trim, sigma-clip, and calculate stats on a lc."""
-
-    # Trim the lightcurve, remove bad values
-
-    # Run sigma-clipping if desired
-
-    # Calculate statistics on lightcurve
-
-    pass
-
 def phase(time, flux, unc_flux, period):
     """Phase the input lightcurve by the input period."""
     # This should probably go in a different module, but I'm not sure where...

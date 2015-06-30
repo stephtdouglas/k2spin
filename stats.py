@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-def stats(time, flux, unc_flux):
+def stats(flux, unc_flux):
     """Compute lightcurve statistics.
 
     Inputs
