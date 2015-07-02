@@ -26,8 +26,7 @@ def stats(flux, unc_flux):
 
 def phase(time, period):
     """Phase the input lightcurve by the input period."""
-    # This should probably go in a different module, but I'm not sure where...
 
-    phase = np.mod(time, period) / period
+    phase = np.mod(time, period)# / period
 
     return phase
