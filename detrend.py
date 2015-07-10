@@ -7,7 +7,8 @@ from scipy import interpolate
 import supersmoother
 from astroML import time_series
 
-import k2spin.utils as utils
+from k2spin import utils
+from k2spin import clean
 
 def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
                which="phased",phase_window=None):
@@ -101,7 +102,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
 def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
                        which="phased",phase_window=None, 
-                       prot_lims=None, num_prot=None):
+                       prot_lims=None, num_prot=1000):
     """Test for a period and then pre-whiten with it.
 
     Inputs
@@ -128,7 +129,8 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
 
     Outputs
     -------
-    clean_time, clean_flux, clean_unc_flux: arrays
+    fund_period, periods_to_test, periodogram 
+    white_flux, white_unc, smoothed_flux
 
     """
 
@@ -136,7 +138,8 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
     log_shortp = np.log10(prot_lims[0])
     log_longp = np.log10(prot_lims[1])
     delta_p = (log_longp - log_shortp) / (1. * num_prot-1)
-    periods_to_test = 10**np.arange(log_shortp, log_longp*delta_p, delta_p)
+    log_periods = np.arange(log_shortp, log_longp + delta_p, delta_p)
+    periods_to_test = 10**log_periods
     omegas_to_test = 2.0 * np.pi / periods_to_test
 
     # Search for a period
@@ -155,7 +158,8 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
     white_flux, white_unc, smoothed_flux = white_out
 
     # Return the period, periodogram, and whitened lc
-    return fund_period, periods_to_test, periodogram, white_flux, white_unc
+    return [fund_period, periods_to_test, periodogram, white_flux, white_unc, 
+            smoothed_flux]
 
 def period_cleaner(time, flux, unc_flux, 
                    prot_lims):
@@ -178,8 +182,9 @@ def period_cleaner(time, flux, unc_flux,
     """
 
     # Sigma clip the input light curve
-    clip_time, clip_flux, clip_unc = utils.sigma_clip(time, flux, 
-                                                      unc_flux, clip_at=6)
+    clip_time, clip_flux, clip_unc = clean.sigma_clip(time, flux, 
+                                               unc_flux, clip_at=6)
+    logging.debug("Finished sigma-clipping")
 
     # Perform 1-2 whitenings 
     # (this always whitens twice???)
@@ -190,15 +195,17 @@ def period_cleaner(time, flux, unc_flux,
                                         prot_lims=prot_lims,
                                         num_prot=1000)
 
-        fund_period, periods_to_test, periodogram = search_out[:-2]
-        white_flux, white_unc = search_out[-2:]
+        fund_period, periods_to_test, periodogram = search_out[:3]
+        white_flux, white_unc, smoothed_flux = search_out[-3:]
 
         # Stats on the pre-whitened lc
         white_med, white_std = utils.stats(white_flux, white_unc)
 
         # Sigma-clip the testing lc
-        clip_time, clip_flux, clip_unc = utils.sigma_clip(time, 
-                               white_flux, white_unc, clip_at=6)
+        clip_time, clip_flux, clip_unc = clean.sigma_clip(time, 
+                                                          white_flux, 
+                                                          white_unc, 
+                                                          clip_at=6)
 
 
     # Pre-whiten the full lc based on the final period

@@ -49,6 +49,8 @@ def sigma_clip(time, flux, unc_flux, clip_at=6):
 
     # Sigma-clip the lightcurve
     to_clip = np.where(abs(flux-med)>(stdev*clip_at))[0]
+    logging.debug("Sigma-clipping")
+    logging.debug(to_clip)
     clipped_time = np.delete(time, to_clip)
     clipped_flux = np.delete(flux, to_clip)
     clipped_unc = np.delete(unc_flux, to_clip)
