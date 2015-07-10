@@ -11,7 +11,7 @@ from k2spin import utils
 from k2spin import clean
 
 def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
-               which="phased",phase_window=None):
+               which="phased",phaser=None):
     """Phase a lightcurve and then smooth it.
 
     Inputs
@@ -29,9 +29,9 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
         whether to smooth the "phased" lightcurve (default) or the "full" 
         lightcurve. 
 
-    phase_window: Float, optional (default=None)
-        Half-width of the boxcar smoothing window, must be specified if 
-        kind="boxcar"
+    phaser: Float, optional (default=None)
+        if kind="boxcar", phaser is the Half-width of the smoothing window.
+        if kind="supersmoother", phaser is alpha (the "bass enhancement").
 
     Outputs
     -------
@@ -47,10 +47,10 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     if kind.lower()=="supersmoother":
 
-        # Instantiate the supersmoother model object with the input period
-        model = supersmoother.SuperSmoother(period=period)
 
         if which.lower()=="phased":
+            # Instantiate the supersmoother model object with the input period
+            model = supersmoother.SuperSmoother(period=period)
 
             # Set up base arrays for phase for the fit
             x_vals = np.linspace(0,max(phased_time),1000)
@@ -59,6 +59,8 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
             y_fit = model.fit(phased_time, flux, unc_flux).predict(x_vals)
 
         elif which.lower()=="full":
+            # Instantiate the supersmoother model object with the input period
+            model = supersmoother.SuperSmoother(alpha=phaser)
 
             # Set up base arrays for time for the fit
             x_vals = np.linspace(min(time),max(time),1000)
@@ -218,7 +220,7 @@ def period_cleaner(time, flux, unc_flux,
 
 
 def simple_detrend(time, flux, unc_flux, kind="supersmoother",
-                   phase_window=None):
+                   phaser=None):
     """Remove bulk trends from the LC
 
     Inputs
@@ -233,9 +235,9 @@ def simple_detrend(time, flux, unc_flux, kind="supersmoother",
         whether to smooth the "phased" lightcurve (default) or the "full" 
         lightcurve. 
 
-    phase_window: Float, optional (default=None)
-        Half-width of the boxcar smoothing window, must be specified if 
-        kind="boxcar"
+    phaser: Float, optional (default=None)
+        if kind="boxcar", phaser is the Half-width of the smoothing window.
+        if kind="supersmoother", phaser is alpha (the "bass enhancement").
 
     Outputs
     -------
@@ -249,7 +251,7 @@ def simple_detrend(time, flux, unc_flux, kind="supersmoother",
     w_flux, w_unc, bulk_trend = pre_whiten(time, flux, unc_flux, 
                                            period=None, kind=kind, 
                                            which="full",  
-                                           phase_window=phase_window)
+                                           phaser=phaser)
 
     # Actually detrend
     detrended_flux = flux / bulk_trend - 1
