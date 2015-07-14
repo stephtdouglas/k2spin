@@ -101,6 +101,42 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     return white_flux, white_unc, smoothed_flux
     
+def run_ls(time, flux, unc_flux, prot_lims=None, num_prot=1000):
+    """Run a periodogram and return it.
+
+    Inputs
+    ------
+    time, flux, unc_flux: array_like
+
+    prot_lims: list-like, length=2
+        minimum and maximum rotation periods to search
+
+    num_prot: integer
+        How many rotation periods to search
+
+    Outputs
+    -------
+    fund_period, fund_power, periods_to_test, periodogram 
+    """
+
+    # Define range of period space to search
+    log_shortp = np.log10(prot_lims[0])
+    log_longp = np.log10(prot_lims[1])
+    delta_p = (log_longp - log_shortp) / (1. * num_prot-1)
+    log_periods = np.arange(log_shortp, log_longp + delta_p, delta_p)
+    periods_to_test = 10**log_periods
+    omegas_to_test = 2.0 * np.pi / periods_to_test
+
+    # Search for a period
+    periodogram = time_series.lomb_scargle(time, flux, unc_flux, 
+                                           omegas_to_test, 
+                                           generalized=True)
+
+    fund_loc = np.argmax(abs(periodogram))
+    fund_period = periods_to_test[fund_loc]
+    fund_power = periodogram[fund_loc]
+
+    return fund_period, fund_power, periods_to_test, periodogram
 
 def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
                        which="phased",phase_window=None, 
@@ -131,26 +167,17 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
 
     Outputs
     -------
-    fund_period, periods_to_test, periodogram 
+    fund_period, fund_power, periods_to_test, periodogram 
     white_flux, white_unc, smoothed_flux
 
     """
 
-    # Define range of period space to search
-    log_shortp = np.log10(prot_lims[0])
-    log_longp = np.log10(prot_lims[1])
-    delta_p = (log_longp - log_shortp) / (1. * num_prot-1)
-    log_periods = np.arange(log_shortp, log_longp + delta_p, delta_p)
-    periods_to_test = 10**log_periods
-    omegas_to_test = 2.0 * np.pi / periods_to_test
-
-    # Search for a period
-    periodogram = time_series.lomb_scargle(time, flux, unc_flux, 
-                                           omegas_to_test, 
-                                           generalized=True)
-
-    fund_loc = np.argmax(abs(periodogram))
-    fund_period = periods_to_test[fund_loc]
+    # Search for periodogram
+    ls_out = run_ls(time, flux, unc_flux, prot_lims=prot_lims, 
+                    num_prot=num_prot)
+    fund_period, fund_power, periods_to_test, periodogram = ls_out
+                                                       
+                                                       
 
     # Whiten on that period
     white_out = pre_whiten(time, flux, unc_flux, fund_period,  
@@ -160,8 +187,8 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
     white_flux, white_unc, smoothed_flux = white_out
 
     # Return the period, periodogram, and whitened lc
-    return [fund_period, periods_to_test, periodogram, white_flux, white_unc, 
-            smoothed_flux]
+    return [fund_period, fund_power, periods_to_test, periodogram, white_flux,
+            white_unc, smoothed_flux]
 
 def period_cleaner(time, flux, unc_flux, 
                    prot_lims):
@@ -179,7 +206,7 @@ def period_cleaner(time, flux, unc_flux,
 
     Outputs
     -------
-    clean_time, clean_flux, clean_unc_flux: arrays
+    clip_time, white_flux, white_unc, smoothed_flux: arrays
 
     """
 
@@ -197,7 +224,7 @@ def period_cleaner(time, flux, unc_flux,
                                         prot_lims=prot_lims,
                                         num_prot=1000)
 
-        fund_period, periods_to_test, periodogram = search_out[:3]
+        fund_period, fund_power, periods_to_test, periodogram = search_out[:4]
         white_flux, white_unc, smoothed_flux = search_out[-3:]
 
         # Stats on the pre-whitened lc
@@ -214,9 +241,8 @@ def period_cleaner(time, flux, unc_flux,
     white_out = pre_whiten(time, flux, unc_flux, fund_period)
     white_flux, white_unc, smoothed_flux = white_out
 
-    # Why return this periodogram though, if I've already changed
-    # the lightcurve???
-    return clip_time, white_flux, white_unc, periods_to_test, periodogram
+    # Return the newly whitened lightcurve and the bulk trend
+    return clip_time, white_flux, white_unc, smoothed_flux
 
 
 def simple_detrend(time, flux, unc_flux, kind="supersmoother",
