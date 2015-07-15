@@ -16,7 +16,7 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, time, flux, unc_flux, power_threshold=250.):
+    def __init__(self, time, flux, unc_flux, power_threshold=0.5):
         """Clean up the input data and sigma-clip it."""
         # Save the power threshold for later use
         self.power_threshold = power_threshold
@@ -30,7 +30,7 @@ class LightCurve(object):
         # Detrend the raw flux
         self._bulk_detrend()
 
-    def fit_and_compare(self):
+    def choose_initial(self):
         """Search raw and detrended LCs for periods, and decide whether there's
         a period there.
 
@@ -54,6 +54,8 @@ class LightCurve(object):
             self.init_prot , self.init_power = det_fp, det_power
             self.init_periods_to_test, self.init_pgram = det_prots, det_pgram
 
+        logging.info("Initial Prot %f Power %f", self.init_prot, 
+                     self.init_power)
 
         # Plot them up
         lcs = [[self.time, self.flux/self.med - 1, abs(self.unc_flux/self.med)],
@@ -62,7 +64,8 @@ class LightCurve(object):
         best_periods = [raw_fp, det_fp]
         data_labels = ["Raw", "Detrended"]
         raw_det_fig = plot.compare_multiple(lcs, pgrams, best_periods, 
-                                            self.power_threshold, data_labels)
+                                            self.power_threshold, data_labels,
+                                            phase_by=self.init_prot)
 
         logging.debug("DONE!")
 
@@ -85,7 +88,7 @@ class LightCurve(object):
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
 
-    def _run_fit(self,use_lc,prot_lims=[0.3,70]):
+    def _run_fit(self, use_lc, prot_lims=[0.3,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
         or a array/list of [time, flux, and unc]
         """

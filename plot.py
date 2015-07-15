@@ -23,7 +23,8 @@ def setup_plots():
     # Second axis - periodogram (or whatever period-finding output)
     ax2 = plt.subplot2grid(base_grid,(4,0),rowspan=3)
     ax2.set_xlabel("Period (d)")
-    ax2.set_ylabel("Power")
+    ax2.set_xscale("log")
+    ax2.set_ylabel("Power (Max=1)")
 
     # Bottom axes should be squished against each other if possible
     # But that appears to be a major pain
@@ -117,7 +118,7 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     return fig, axes_list
 
 def compare_multiple(lightcurves, periodograms, best_periods, threshold,
-                     data_labels,kwarg_sets=None):
+                     data_labels, phase_by=None, kwarg_sets=None):
     """Plot multiple sets of lightcurves onto a three-paneled plot.
 
     There must be at least 2 lightcurves, periodograms, and best_periods,
@@ -127,12 +128,13 @@ def compare_multiple(lightcurves, periodograms, best_periods, threshold,
     # Pass each set of inputs to plot_one
 
     fig, ax_list = plot_one(lightcurves[0], periodograms[0], best_periods[0], 
-                            threshold, data_labels[0], phase_by=best_periods[1])
+                            threshold, data_labels[0], phase_by=phase_by)
     #interp_lc = np.interp(lightcurves[1][0], lightcurves[0][0],  
     #                      lightcurves[0][1]
     #residuals = lightcurves[1][1] - lightcurves[0][1]
     fig, ax_list = plot_one(lightcurves[1], periodograms[1], best_periods[1], 
-                            threshold, data_labels[1], axes_list=ax_list)
+                            threshold, data_labels[1], phase_by=phase_by,
+                            axes_list=ax_list)
 
     leg = ax_list[0].legend(loc=3, ncol=2, mode="expand", numpoints=3, 
                             bbox_to_anchor=(0., 1.02, 1., .102))
