@@ -139,7 +139,7 @@ def run_ls(time, flux, unc_flux, prot_lims=None, num_prot=1000):
     return fund_period, fund_power, periods_to_test, periodogram
 
 def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
-                       which="phased",phase_window=None, 
+                       which="phased",phaser=None, 
                        prot_lims=None, num_prot=1000):
     """Test for a period and then pre-whiten with it.
 
@@ -155,12 +155,12 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
         whether to smooth the "phased" lightcurve (default) or the "full" 
         lightcurve. 
 
-    phase_window: Float, optional (default=None)
-        Half-width of the boxcar smoothing window, must be specified if 
-        kind="boxcar"
+    phaser: Float, optional (default=None)
+        if kind="boxcar", phaser is the Half-width of the smoothing window.
+        if kind="supersmoother", phaser is alpha (the "bass enhancement").
 
     prot_lims: list-like, length=2
-        minimum and maximum rotation periods to search
+        minimum and maximum rotation periods to search for lomb-scargle
 
     num_prot: integer
         How many rotation periods to search
@@ -182,7 +182,7 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
     # Whiten on that period
     white_out = pre_whiten(time, flux, unc_flux, fund_period,  
                            kind=kind, which=which, 
-                           phase_window=phase_window)
+                           phaser=phaser)
 
     white_flux, white_unc, smoothed_flux = white_out
 
@@ -242,7 +242,7 @@ def period_cleaner(time, flux, unc_flux,
     white_flux, white_unc, smoothed_flux = white_out
 
     # Return the newly whitened lightcurve and the bulk trend
-    return clip_time, white_flux, white_unc, smoothed_flux
+    return time, white_flux, white_unc, smoothed_flux
 
 
 def simple_detrend(time, flux, unc_flux, kind="supersmoother",
