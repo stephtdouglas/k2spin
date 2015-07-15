@@ -52,7 +52,7 @@ class LightCurve(object):
         elif lc_to_use==2:
             logging.info("Using detrended lightcurve")
             self.init_prot , self.init_power = det_fp, det_power
-            self.init_periods_to_test, self.init_pgram = det_prots, det_prgram
+            self.init_periods_to_test, self.init_pgram = det_prots, det_pgram
 
 
         # Plot them up

@@ -119,6 +119,8 @@ def run_ls(time, flux, unc_flux, prot_lims=None, num_prot=1000):
     fund_period, fund_power, periods_to_test, periodogram 
     """
 
+    logging.debug("run ls t %d f %d u %d", len(time), len(flux),
+                  len(unc_flux))
     # Define range of period space to search
     log_shortp = np.log10(prot_lims[0])
     log_longp = np.log10(prot_lims[1])
@@ -231,7 +233,7 @@ def period_cleaner(time, flux, unc_flux,
         white_med, white_std = utils.stats(white_flux, white_unc)
 
         # Sigma-clip the testing lc
-        clip_time, clip_flux, clip_unc = clean.sigma_clip(time, 
+        clip_time, clip_flux, clip_unc = clean.sigma_clip(clip_time, 
                                                           white_flux, 
                                                           white_unc, 
                                                           clip_at=6)
