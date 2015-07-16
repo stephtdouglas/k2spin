@@ -61,7 +61,7 @@ def sigma_clip(time, flux, unc_flux, clip_at=6):
     clipped_unc = np.delete(unc_flux, to_clip)
 
     # Return clipped lightcurve
-    return clipped_time, clipped_flux, clipped_unc
+    return clipped_time, clipped_flux, clipped_unc, to_keep
 
 
 def prep_lc(time, flux, unc_flux, clip_at=6):
@@ -88,7 +88,7 @@ def prep_lc(time, flux, unc_flux, clip_at=6):
         c_time, c_flux, c_unc, c_kept = sigma_clip(t_time, t_flux, t_unc,
                                                    clip_at=clip_at)
     else:
-        c_time, c_flux, c_unc = t_time, t_flux, t_unc
+        c_time, c_flux, c_unc, c_kept = t_time, t_flux, t_unc, t_kept
 
     all_kept = t_kept[c_kept]
 

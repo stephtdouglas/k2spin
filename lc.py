@@ -1,6 +1,7 @@
 """Class for lightcurves."""
 
 import logging
+import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +19,8 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, time, flux, unc_flux, name, power_threshold=0.5):
+    def __init__(self, time, flux, unc_flux, x_pos, y_pos, name, 
+                 power_threshold=0.5):
         """Clean up the input data and sigma-clip it."""
         # Save the power threshold for later use
         self.power_threshold = power_threshold
@@ -29,7 +31,9 @@ class LightCurve(object):
 
         # Clean up the input lightcurve
         cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=6.)
-        self.time, self.flux, self.unc_flux, self.med, self.stdev = cleaned_out
+        self.time, self.flux, self.unc_flux = cleaned_out[:3]
+        self.med, self.stdev, all_kept = cleaned_out[3:]
+        self.x_pos, self.y_pos = x_pos[all_kept], y_pos[all_kept]
         logging.debug("len init t %d f %d u %d", len(self.time), 
                       len(self.flux),len(self.unc_flux))
 
@@ -93,6 +97,45 @@ class LightCurve(object):
 
         logging.debug("DONE!")
 
+    def correct_and_fit(self):
+        """Position-correct and perform a fit."""
+        logging.debug("Fitting corrected lightcurve")
+
+        self._xy_correct()
+
+        fit_out = self._run_fit([self.time, self.corrected_flux,
+                                 self.corrected_unc])
+        fund_prot, fund_power, periods_to_test, periodogram = fit_out
+
+        eval_out =  evaluate.test_pgram(periods_to_test, periodogram, 
+                                        self.power_threshold)
+
+
+        if eval_out[-1]==False:
+            logging.warning("Corrected lightcurve is not clean")
+        else:
+            logging.debug("Corrected lightcurve is clean")
+        plot_aliases = [None, eval_out[2]]
+
+        # Plot them up
+        lcs = [[self.time, self.use_flux, self.use_unc],
+               [self.time, self.corrected_flux, self.corrected_unc]]
+        pgrams = [[self.init_periods_to_test, self.init_pgram], 
+                  [periods_to_test, periodogram]]
+        best_periods = [fund_prot, self.init_prot]
+        data_labels = ["Initial", "Corrected"]
+        rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
+                                                self.power_threshold, 
+                                                aliases=plot_aliases,
+                                                data_labels=data_labels,  
+                                                phase_by=self.init_prot)
+
+        rd_fig.suptitle(self.name, fontsize="x-large")
+        plt.savefig("{}_corrected.png".format(self.name))
+        plt.show()
+
+
+
 
     def _bulk_detrend(self, alpha=8):
         """Smooth the rapid variations in the lightcurve and remove bulk trends.
@@ -116,7 +159,6 @@ class LightCurve(object):
         """Run a fit on a single lc, either "raw" or "detrended" 
         or a array/list of [time, flux, and unc]
         """
-        tt = self.time
 
         if use_lc=="raw":
             logging.debug("fitting raw lc")
@@ -161,6 +203,40 @@ class LightCurve(object):
             to_use = 0
 
         return to_use
+
+    def _xy_correct(self, n_closest=21):
+        """Correct for positional variations in the lightcurve once selected."""
+        
+        # Loop through the lightcurve and find the n closest pixels.
+        # Then divide by the median flux from those pixels
+
+        num_pts = len(self.use_flux)
+        logging.debug("Pixel position correction %d", num_pts)
+
+        self.corrected_flux = np.zeros(num_pts)
+        self.corrected_unc = np.zeros(num_pts)
+
+        for i, fval, xx, yy in itertools.izip(range(num_pts), self.use_flux,
+                                              self.x_pos, self.y_pos):
+            pix_sep = np.sqrt((xx - self.x_pos)**2 + (yy - self.y_pos)**2)
+            min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
+            logging.debug(np.median(pix_sep[min_ind]))
+
+            median_nearest = np.median(self.use_flux[min_ind])
+            logging.debug("This flux %f Median Nearest %f", 
+                          fval, median_nearest)
+            self.corrected_flux[i] = fval / median_nearest
+            self.corrected_unc[i] = self.use_unc[i] / median_nearest
+
+        logging.debug("Correction completed")
+
+    def _diagnostic_plots(self):
+        """Plot some basic informational plots:
+        Flux as a function of X-Y position
+        Flux as a function of time
+        """
+        pass
+
 
     def _multi_search(self,lc_type):
         """Search a lightcurve for a secondary signal."""
