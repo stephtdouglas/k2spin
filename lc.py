@@ -10,6 +10,7 @@ from k2spin import utils
 from k2spin import clean
 from k2spin import detrend
 from k2spin import plot
+from k2spin import evaluate
 
 class LightCurve(object):
     """
@@ -62,6 +63,11 @@ class LightCurve(object):
         logging.info("Initial Prot %f Power %f", self.init_prot, 
                      self.init_power)
 
+        # Get aliases for selected period
+        eval_out = evaluate.test_pgram(self.init_periods_to_test, 
+                                       self.init_pgram, self.power_threshold)
+        plot_aliases = [None, eval_out[2]]
+
         # Plot them up
         lcs = [[self.time, self.flux/self.med - 1, abs(self.unc_flux/self.med)],
                [self.time, self.det_flux, self.det_unc]]
@@ -70,7 +76,8 @@ class LightCurve(object):
         data_labels = ["Raw", "Detrended"]
         rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
                                                 self.power_threshold, 
-                                                data_labels,  
+                                                aliases=plot_aliases,
+                                                data_labels=data_labels,  
                                                 phase_by=self.init_prot)
 
         rd_fig.suptitle(self.name, fontsize="x-large")

@@ -42,7 +42,7 @@ def setup_plots():
 
 
 def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
-             residuals=None, axes_list=None,plot_title=None,
+             residuals=None, aliases=None, axes_list=None,plot_title=None,
              phase_by=None, **plot_kwargs):
     """Plot input lightcurve, input periodogram, and input phased lightcurve
     INPUTS ARE DIFFERENT FROM REST OF CODE
@@ -61,6 +61,13 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
 
     data_label: string
         name for the dataset being plotted
+
+    residuals: array-like (default None)
+        if provided, will be plotted in the bottom panel
+
+    aliases: array-like (default None)
+        if provided, will be plotted as vertical dotted lines on the 
+        periodogram
 
     axes_list: optional, length=4
         if not provided, a new figure will be created.
@@ -101,6 +108,10 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     if power_threshold<(axes_list[1].get_ylim()[1]):
         axes_list[1].axhline(power_threshold,color="b")
 
+    if aliases is not None:
+        for alias in aliases:
+            axes_list[1].axvline(alias, color=plot_color, linestyle=":")
+
     # Bottom panels: phased lightcurve
     if phase_by is None:
         phase_by = best_period
@@ -118,7 +129,7 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     return fig, axes_list
 
 def compare_multiple(lightcurves, periodograms, best_periods, threshold,
-                     data_labels, phase_by=None, kwarg_sets=None):
+                     data_labels, aliases=None, phase_by=None, kwarg_sets=None):
     """Plot multiple sets of lightcurves onto a three-paneled plot.
 
     There must be at least 2 lightcurves, periodograms, and best_periods,
@@ -126,14 +137,21 @@ def compare_multiple(lightcurves, periodograms, best_periods, threshold,
     """
 
     # Pass each set of inputs to plot_one
+    if aliases is not None:
+        al0 = aliases[0]
+        al1 = aliases[1]
+    else: 
+        al0, al1 = None, None
 
     fig, ax_list = plot_one(lightcurves[0], periodograms[0], best_periods[0], 
-                            threshold, data_labels[0], phase_by=phase_by)
+                            threshold, aliases=al0,
+                            data_label=data_labels[0], phase_by=phase_by)
     #interp_lc = np.interp(lightcurves[1][0], lightcurves[0][0],  
     #                      lightcurves[0][1]
     #residuals = lightcurves[1][1] - lightcurves[0][1]
     fig, ax_list = plot_one(lightcurves[1], periodograms[1], best_periods[1], 
-                            threshold, data_labels[1], phase_by=phase_by,
+                            threshold, aliases=al1,
+                            data_label=data_labels[1], phase_by=phase_by,
                             axes_list=ax_list)
 
     leg = ax_list[0].legend(loc=3, ncol=2, mode="expand", numpoints=3, 
@@ -142,7 +160,7 @@ def compare_multiple(lightcurves, periodograms, best_periods, threshold,
     ltexts[0].set_color("k")
     ltexts[1].set_color("#FF4D4D")
 
-    plt.subplots_adjust(bottom=0.06, top=0.995, hspace=1.7)
+    plt.subplots_adjust(bottom=0.06, top=0.995, hspace=1.8)
 
     return fig, ax_list
 
