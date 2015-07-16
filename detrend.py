@@ -9,6 +9,7 @@ from astroML import time_series
 
 from k2spin import utils
 from k2spin import clean
+from k2spin import evaluate
 
 def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
                which="phased",phaser=None):
@@ -101,7 +102,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     return white_flux, white_unc, smoothed_flux
     
-def run_ls(time, flux, unc_flux, prot_lims=None, num_prot=1000):
+def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000):
     """Run a periodogram and return it.
 
     Inputs
@@ -134,14 +135,13 @@ def run_ls(time, flux, unc_flux, prot_lims=None, num_prot=1000):
                                            omegas_to_test, 
                                            generalized=True)
 
-    fund_loc = np.argmax(abs(periodogram))
-    fund_period = periods_to_test[fund_loc]
-    fund_power = periodogram[fund_loc]
+    ls_out = evaluate.test_pgram(periods_to_test, periodogram, threshold)
+    fund_period, fund_power, aliases, is_clean  = ls_out
 
     return fund_period, fund_power, periods_to_test, periodogram
 
 def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
-                       which="phased",phaser=None, 
+                       which="phased",phaser=None, pgram_threshold=None,
                        prot_lims=None, num_prot=1000):
     """Test for a period and then pre-whiten with it.
 
@@ -161,6 +161,8 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
         if kind="boxcar", phaser is the Half-width of the smoothing window.
         if kind="supersmoother", phaser is alpha (the "bass enhancement").
 
+    pgram_threshold: float
+
     prot_lims: list-like, length=2
         minimum and maximum rotation periods to search for lomb-scargle
 
@@ -174,9 +176,11 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
 
     """
 
+    logging.debug("S&T threshold %f",pgram_threshold)
+
     # Search for periodogram
-    ls_out = run_ls(time, flux, unc_flux, prot_lims=prot_lims, 
-                    num_prot=num_prot)
+    ls_out = run_ls(time, flux, unc_flux, pgram_threshold,  
+                    prot_lims=prot_lims, num_prot=num_prot)
     fund_period, fund_power, periods_to_test, periodogram = ls_out
                                                        
                                                        
@@ -192,8 +196,7 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
     return [fund_period, fund_power, periods_to_test, periodogram, white_flux,
             white_unc, smoothed_flux]
 
-def period_cleaner(time, flux, unc_flux, 
-                   prot_lims):
+def period_cleaner(time, flux, unc_flux, prot_lims, pgram_threshold):
     """Test for a period and then pre-whiten with it.
 
     Inputs
@@ -223,6 +226,7 @@ def period_cleaner(time, flux, unc_flux,
 
         # search and whiten once
         search_out = search_and_detrend(clip_time, clip_flux, clip_unc,
+                                        pgram_threshold=pgram_threshold,
                                         prot_lims=prot_lims,
                                         num_prot=1000)
 

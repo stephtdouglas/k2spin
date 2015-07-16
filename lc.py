@@ -23,6 +23,9 @@ class LightCurve(object):
         self.power_threshold = power_threshold
         self.name = name
 
+        logging.debug(self.name)
+        logging.debug("Threshold %f",self.power_threshold)
+
         # Clean up the input lightcurve
         cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=6.)
         self.time, self.flux, self.unc_flux, self.med, self.stdev = cleaned_out
@@ -110,15 +113,19 @@ class LightCurve(object):
             logging.debug("fitting other lc")
             tt, ff, uu = use_lc
 
+        logging.debug("_run_fit threshold %f", self.power_threshold)
+
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
         cl_time, cl_flux, cl_unc, sm_flux = detrend.period_cleaner(tt, ff, uu,
-                                                           prot_lims=prot_lims)
+                    pgram_threshold=self.power_threshold, prot_lims=prot_lims)
 
         logging.debug("Smoothed, now periodogram")
         logging.debug("Cleaned t %d f %d u %d", len(cl_time),
                       len(cl_flux), len(cl_unc))
         # Test the periodogram and pick the best period and power
-        ls_out = detrend.run_ls(cl_time, cl_flux, cl_unc, prot_lims=prot_lims)
+        ls_out = detrend.run_ls(cl_time, cl_flux, cl_unc, 
+                                threshold=self.power_threshold,
+                                prot_lims=prot_lims)
         fund_prot, fund_power, periods_to_test, periodogram = ls_out
 
         return fund_prot, fund_power, periods_to_test, periodogram
