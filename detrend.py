@@ -216,8 +216,9 @@ def period_cleaner(time, flux, unc_flux, prot_lims, pgram_threshold):
     """
 
     # Sigma clip the input light curve
-    clip_time, clip_flux, clip_unc = clean.sigma_clip(time, flux, 
-                                               unc_flux, clip_at=6)
+    clip_time, clip_flux, clip_unc, kept = clean.sigma_clip(time, flux, 
+                                                            unc_flux, 
+                                                            clip_at=6)
     logging.debug("Finished sigma-clipping")
 
     # Perform 1-2 whitenings 
@@ -237,10 +238,10 @@ def period_cleaner(time, flux, unc_flux, prot_lims, pgram_threshold):
         white_med, white_std = utils.stats(white_flux, white_unc)
 
         # Sigma-clip the testing lc
-        clip_time, clip_flux, clip_unc = clean.sigma_clip(clip_time, 
-                                                          white_flux, 
-                                                          white_unc, 
-                                                          clip_at=6)
+        clip_time, clip_flux, clip_unc, kept = clean.sigma_clip(clip_time, 
+                                                                white_flux, 
+                                                                white_unc, 
+                                                                clip_at=6)
 
 
     # Pre-whiten the full lc based on the final period

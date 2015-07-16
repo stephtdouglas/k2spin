@@ -16,6 +16,7 @@ def trim(time, flux, unc_flux):
     Outputs
     -------
     trimmed_time, trimmed_flux, trimmed_unc: arrays
+    good: boolean mask, locations that were kept
 
     """
 
@@ -27,7 +28,7 @@ def trim(time, flux, unc_flux):
     trimmed_flux = flux[good]
     trimmed_unc = unc_flux[good]
 
-    return trimmed_time, trimmed_flux, trimmed_unc
+    return trimmed_time, trimmed_flux, trimmed_unc, good
 
 def sigma_clip(time, flux, unc_flux, clip_at=6):
     """Perform sigma-clipping on the lightcurve.
@@ -42,13 +43,17 @@ def sigma_clip(time, flux, unc_flux, clip_at=6):
     Outputs
     -------
     clipped_time, clipped_flux, clipped_unc: arrays
+
+    to_keep: boolean mask of locations that were kept
     """
 
     # Compute statistics on the lightcurve
     med, stdev  = utils.stats(flux, unc_flux)
 
     # Sigma-clip the lightcurve
-    to_clip = np.where(abs(flux-med)>(stdev*clip_at))[0]
+    outliers = abs(flux-med)>(stdev*clip_at)
+    to_clip = np.where(outliers==True)[0]
+    to_keep = np.where(outliers==False)[0]
     logging.debug("Sigma-clipping")
     logging.debug(to_clip)
     clipped_time = np.delete(time, to_clip)
@@ -76,17 +81,19 @@ def prep_lc(time, flux, unc_flux, clip_at=6):
     """
 
     # Trim the lightcurve, remove bad values
-    t_time, t_flux, t_unc = trim(time, flux, unc_flux)
+    t_time, t_flux, t_unc, t_kept = trim(time, flux, unc_flux)
 
     # Run sigma-clipping if desired
     if clip_at is not None:
-        c_time, c_flux, c_unc = sigma_clip(t_time, t_flux, t_unc,
-                                           clip_at=clip_at)
+        c_time, c_flux, c_unc, c_kept = sigma_clip(t_time, t_flux, t_unc,
+                                                   clip_at=clip_at)
     else:
         c_time, c_flux, c_unc = t_time, t_flux, t_unc
+
+    all_kept = t_kept[c_kept]
 
     # Calculate statistics on lightcurve
     c_med, c_stdev = utils.stats(c_flux, c_unc)
 
     # Return cleaned lightcurve and statistics
-    return c_time, c_flux, c_unc, c_med, c_stdev
+    return c_time, c_flux, c_unc, c_med, c_stdev, all_kept
