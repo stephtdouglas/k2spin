@@ -3,6 +3,7 @@
 import logging
 
 import numpy as np
+import matplotlib.pyplot as plt
 from astroML import time_series
 
 from k2spin import utils
@@ -16,10 +17,11 @@ class LightCurve(object):
 
     """
 
-    def __init__(self, time, flux, unc_flux, power_threshold=0.5):
+    def __init__(self, time, flux, unc_flux, name, power_threshold=0.5):
         """Clean up the input data and sigma-clip it."""
         # Save the power threshold for later use
         self.power_threshold = power_threshold
+        self.name = name
 
         # Clean up the input lightcurve
         cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=6.)
@@ -63,9 +65,13 @@ class LightCurve(object):
         pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
         best_periods = [raw_fp, det_fp]
         data_labels = ["Raw", "Detrended"]
-        raw_det_fig = plot.compare_multiple(lcs, pgrams, best_periods, 
-                                            self.power_threshold, data_labels,
-                                            phase_by=self.init_prot)
+        rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
+                                                self.power_threshold, 
+                                                data_labels,  
+                                                phase_by=self.init_prot)
+
+        rd_fig.suptitle(self.name, fontsize="x-large")
+        plt.savefig("{}_raw_detrend.png".format(self.name))
 
         logging.debug("DONE!")
 

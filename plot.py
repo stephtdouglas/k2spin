@@ -143,9 +143,8 @@ def compare_multiple(lightcurves, periodograms, best_periods, threshold,
     ltexts[1].set_color("#FF4D4D")
 
     plt.subplots_adjust(bottom=0.06, top=0.995, hspace=1.7)
-    plt.show()
 
-#    return fig
+    return fig, ax_list
 
 
 # Other notes pulled from Kevin's .pro file, keeping for now for reference
