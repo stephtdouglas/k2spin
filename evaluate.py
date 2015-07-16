@@ -33,7 +33,7 @@ def test_pgram(periods, powers, threshold, n_aliases=3):
     fund_period = periods[fund_loc]
     fund_power = powers[fund_loc]
 
-    logging.debug("Fundamental %d Prot=%f Power=%f", fund_loc, fund_period,
+    logging.info("Fundamental %d Prot=%f Power=%f", fund_loc, fund_period,
                   fund_power)
 
     # and aliases
@@ -45,14 +45,21 @@ def test_pgram(periods, powers, threshold, n_aliases=3):
     aliases = np.append(pos_aliases, neg_aliases)
     tot_aliases = len(aliases)
 
+    logging.debug("Aliases: {}".format(aliases))
+
+    # percentages to use for finding values to clip
+    fund_5percent = fund_period * 0.05
+    fund_2percent = fund_period * 0.02
+
     # Clip the best peak out of the periodogram
-    to_clip = np.where(abs(periods - fund_period)<0.05)[0]
+    to_clip = np.where(abs(periods - fund_period)<=fund_5percent)[0]
+    logging.debug(periods[to_clip])
 
     # Now clip out aliases
     for i, alias in enumerate(aliases):
-        to_clip = np.intersect1d(to_clip, 
-                                 np.where(abs(periods - alias)<0.02)[0])
- 
+        to_clip = np.union1d(to_clip, 
+                             np.where(abs(periods - alias)<=fund_2percent)[0])
+
     clipped_periods = np.delete(periods, to_clip)
     clipped_powers = np.delete(powers, to_clip)
 
@@ -67,6 +74,7 @@ def test_pgram(periods, powers, threshold, n_aliases=3):
         is_clean = True
     else:
         is_clean = False
+        logging.info("Max clipped power = %f", max_clip_power)
 
     # Return best_period, best_power, aliases, is_clean
     return fund_period, fund_power, aliases, is_clean

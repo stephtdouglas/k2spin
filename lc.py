@@ -55,10 +55,14 @@ class LightCurve(object):
             logging.info("Using raw lightcurve")
             self.init_prot , self.init_power = raw_fp, raw_power
             self.init_periods_to_test, self.init_pgram = raw_prots, raw_pgram
+            self.use_flux = self.flux / self.med
+            self.use_unc = self.unc_flux / self.med
         elif lc_to_use==2:
             logging.info("Using detrended lightcurve")
             self.init_prot , self.init_power = det_fp, det_power
             self.init_periods_to_test, self.init_pgram = det_prots, det_pgram
+            self.use_flux = self.det_flux 
+            self.use_unc = self.unc_flux 
 
         logging.info("Initial Prot %f Power %f", self.init_prot, 
                      self.init_power)
@@ -66,6 +70,10 @@ class LightCurve(object):
         # Get aliases for selected period
         eval_out = evaluate.test_pgram(self.init_periods_to_test, 
                                        self.init_pgram, self.power_threshold)
+        if eval_out[-1]==False:
+            logging.warning("Selected lightcurve is not clean")
+        else:
+            logging.debug("Selected lightcurve is clean")
         plot_aliases = [None, eval_out[2]]
 
         # Plot them up
