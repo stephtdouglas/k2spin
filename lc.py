@@ -61,12 +61,14 @@ class LightCurve(object):
             self.init_periods_to_test, self.init_pgram = raw_prots, raw_pgram
             self.use_flux = self.flux / self.med
             self.use_unc = self.unc_flux / self.med
+            data_labels = ["Raw (Selected)", "Detrended"]
         elif lc_to_use==2:
             logging.info("Using detrended lightcurve")
             self.init_prot , self.init_power = det_fp, det_power
             self.init_periods_to_test, self.init_pgram = det_prots, det_pgram
             self.use_flux = self.det_flux 
             self.use_unc = self.unc_flux 
+            data_labels = ["Raw", "Detrended (Selected)"]
 
         logging.info("Initial Prot %f Power %f", self.init_prot, 
                      self.init_power)
@@ -85,14 +87,13 @@ class LightCurve(object):
                [self.time, self.det_flux, self.det_unc]]
         pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
         best_periods = [raw_fp, det_fp]
-        data_labels = ["Raw", "Detrended"]
         rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
                                                 self.power_threshold, 
                                                 aliases=plot_aliases,
                                                 data_labels=data_labels,  
                                                 phase_by=self.init_prot)
 
-        rd_fig.suptitle(self.name, fontsize="x-large")
+        rd_fig.suptitle(self.name, fontsize="large", y=0.99)
         plt.savefig("{}_raw_detrend.png".format(self.name))
 
         logging.debug("DONE!")
@@ -122,15 +123,15 @@ class LightCurve(object):
                [self.time, self.corrected_flux, self.corrected_unc]]
         pgrams = [[self.init_periods_to_test, self.init_pgram], 
                   [periods_to_test, periodogram]]
-        best_periods = [fund_prot, self.init_prot]
+        best_periods = [self.init_prot, fund_prot]
         data_labels = ["Initial", "Corrected"]
         rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
                                                 self.power_threshold, 
                                                 aliases=plot_aliases,
                                                 data_labels=data_labels,  
-                                                phase_by=self.init_prot)
+                                                phase_by=fund_prot)
 
-        rd_fig.suptitle(self.name, fontsize="x-large")
+        rd_fig.suptitle(self.name, fontsize="large", y=0.99)
         plt.savefig("{}_corrected.png".format(self.name))
         plt.show()
 
@@ -216,13 +217,29 @@ class LightCurve(object):
         self.corrected_flux = np.zeros(num_pts)
         self.corrected_unc = np.zeros(num_pts)
 
+        first_half = self.time<=2102
+        x_pos1 = self.x_pos[first_half==True] 
+        y_pos1 = self.y_pos[first_half==True]
+        x_pos2 = self.x_pos[first_half==False]
+        y_pos2 = self.y_pos[first_half==False]
+
         for i, fval, xx, yy in itertools.izip(range(num_pts), self.use_flux,
                                               self.x_pos, self.y_pos):
-            pix_sep = np.sqrt((xx - self.x_pos)**2 + (yy - self.y_pos)**2)
+            if first_half[i]:
+                comp_x, comp_y = x_pos1, y_pos1
+                comp_f = self.use_flux[first_half==True]
+            else:
+                comp_x, comp_y = x_pos2, y_pos2
+                comp_f = self.use_flux[first_half==False]
+
+#            comp_x, comp_y = self.x_pos, self.y_pos
+#            comp_f = self.use_flux
+
+            pix_sep = np.sqrt((xx - comp_x)**2 + (yy - comp_y)**2)
             min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
             logging.debug(np.median(pix_sep[min_ind]))
 
-            median_nearest = np.median(self.use_flux[min_ind])
+            median_nearest = np.median(comp_f[min_ind])
             logging.debug("This flux %f Median Nearest %f", 
                           fval, median_nearest)
             self.corrected_flux[i] = fval / median_nearest
