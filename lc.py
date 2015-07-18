@@ -94,9 +94,10 @@ class LightCurve(object):
                                                 phase_by=self.init_prot)
 
         rd_fig.suptitle(self.name, fontsize="large", y=0.99)
-        plt.savefig("{}_raw_detrend.png".format(self.name))
 
-        logging.debug("DONE!")
+        rd_fig.delaxes(rd_axes[3])
+
+        plt.savefig("{}_raw_detrend.png".format(self.name))
 
     def correct_and_fit(self):
         """Position-correct and perform a fit."""
@@ -111,6 +112,7 @@ class LightCurve(object):
         eval_out =  evaluate.test_pgram(periods_to_test, periodogram, 
                                         self.power_threshold)
 
+        self.corrected_prot = fund_prot
 
         if eval_out[-1]==False:
             logging.warning("Corrected lightcurve is not clean")
@@ -132,6 +134,31 @@ class LightCurve(object):
                                                 phase_by=fund_prot)
 
         rd_fig.suptitle(self.name, fontsize="large", y=0.99)
+
+        ptime, fsine = evaluate.fit_sine(self.time, self.corrected_flux,
+                                         self.corrected_unc, 
+                                         self.corrected_prot)
+
+        plotx = np.argsort(ptime)
+        rd_axes[2].plot(ptime[plotx], fsine[plotx], color="lightgrey", lw=2)
+        rd_axes[2].set_ylim(min(fsine)*0.9, max(fsine)*1.1)
+        
+        use_residuals = self.use_flux - fsine
+        cor_residuals = self.corrected_flux - fsine
+
+        logging.debug("RESIDUALS")
+        logging.debug(use_residuals[:10])
+        logging.debug(cor_residuals[:10])
+
+        rd_axes[3].errorbar(self.time, use_residuals, self.use_unc,
+                            fmt=plot.shape1, ms=2, capsize=0, 
+                            ecolor=plot.color1, color=plot.color1,
+                            mec=plot.color1)
+        rd_axes[3].errorbar(self.time, cor_residuals, self.corrected_unc,
+                            fmt=plot.shape2, ms=2, capsize=0, 
+                            ecolor=plot.color2, color=plot.color2,  
+                            mec=plot.color2)
+
         plt.savefig("{}_corrected.png".format(self.name))
         plt.show()
 
@@ -247,13 +274,12 @@ class LightCurve(object):
 
         logging.debug("Correction completed")
 
-    def _diagnostic_plots(self):
+    def _plot_xy(self):
         """Plot some basic informational plots:
         Flux as a function of X-Y position
         Flux as a function of time
         """
         pass
-
 
     def _multi_search(self,lc_type):
         """Search a lightcurve for a secondary signal."""

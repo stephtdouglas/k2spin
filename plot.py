@@ -4,9 +4,14 @@ import logging
 import itertools
 
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 
 from k2spin import utils
 
+color1 = "k"
+color2 = "#FF4D4D"
+shape1 = "o"
+shape2 = "s"
 
 def setup_plots():
     """Set up a four-paneled figure."""
@@ -24,6 +29,7 @@ def setup_plots():
     ax2 = plt.subplot2grid(base_grid,(4,0),rowspan=3)
     ax2.set_xlabel("Period (d)")
     ax2.set_xscale("log")
+    ax2.yaxis.set_major_formatter(ticker.ScalarFormatter())
     ax2.set_ylabel("Power (Max=1)")
 
     # Bottom axes should be squished against each other if possible
@@ -82,14 +88,14 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     # If axes_list is None, create the figure and axes with setup_plots
     if axes_list is None:
         fig, axes_list = setup_plots()
-        plot_color, plot_marker = "k", "o"
+        plot_color, plot_marker = color1, shape1
     elif len(axes_list)!=4:
         logging.warning("Incorrect number of axes! Setting up new figure")
         fig, axes_list = setup_plots()
-        plot_color, plot_marker = "k", "o"
+        plot_color, plot_marker = color1, shape1
     else:
         fig = plt.gcf()
-        plot_color, plot_marker = "#FF4D4D", "s"
+        plot_color, plot_marker = color2, shape2
 
     # Top panel: lightcurve
 #    axes_list[0].errorbar(lightcurve[0], lightcurve[1], lightcurve[2], lw=0, 
