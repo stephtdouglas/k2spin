@@ -102,7 +102,8 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     return white_flux, white_unc, smoothed_flux
     
-def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000):
+def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000,
+           run_bootstrap=False):
     """Run a periodogram and return it.
 
     Inputs
@@ -117,7 +118,10 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000):
 
     Outputs
     -------
-    fund_period, fund_power, periods_to_test, periodogram 
+    fund_period, fund_power, periods_to_test, periodogram, aliases
+
+    sigmas
+        only if run_bootstrap=True
     """
 
     logging.debug("run ls t %d f %d u %d", len(time), len(flux),
@@ -138,7 +142,21 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000):
     ls_out = evaluate.test_pgram(periods_to_test, periodogram, threshold)
     fund_period, fund_power, aliases, is_clean  = ls_out
 
-    return fund_period, fund_power, periods_to_test, periodogram
+    # Now bootstrap to find the typical height of the highest peak
+    if run_bootstrap:
+        bs_out = time_series.lomb_scargle_bootstrap(time, flux, unc_flux, 
+                                                    omegas_to_test, 
+                                                    generalized=True,
+                                                    N_bootstraps=500)
+        sigmas = np.percentile(bs_out, [99, 95])
+        logging.debug("Fund power: %f 99\% %f 95\% %f", 
+                      fund_power, sigmas[0], sigmas[1])
+    else:
+        sigmas=None
+
+
+    return (fund_period, fund_power, periods_to_test, periodogram, 
+            aliases, sigmas)
 
 def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
                        which="phased",phaser=None, pgram_threshold=None,
@@ -181,7 +199,7 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
     # Search for periodogram
     ls_out = run_ls(time, flux, unc_flux, pgram_threshold,  
                     prot_lims=prot_lims, num_prot=num_prot)
-    fund_period, fund_power, periods_to_test, periodogram = ls_out
+    fund_period, fund_power, periods_to_test, periodogram = ls_out[:4]
                                                        
                                                        
 

@@ -112,8 +112,21 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     print periodogram[0][:10], periodogram[1][:10]
     axes_list[1].plot(periodogram[0], periodogram[1], color=plot_color)
     axes_list[1].axvline(best_period, color=plot_color, linestyle="--")
-    if power_threshold<(axes_list[1].get_ylim()[1]):
-        axes_list[1].axhline(power_threshold,color="b")
+
+    # Plot the power threshold, if it would be visible
+    ymax = axes_list[1].get_ylim()[1]
+    logging.debug("ymax %f", ymax)
+    if (type(power_threshold)==float and 
+        power_threshold<ymax):
+        # Only one threshold
+        axes_list[1].axhline(power_threshold,color="Grey",ls="-.")
+    elif (type(power_threshold)==float and 
+          power_threshold>=ymax):
+        logging.debug("peak lower than threshold")
+    else:
+        for threshold in power_threshold:
+            logging.debug(threshold)
+            axes_list[1].axhline(threshold,color=plot_color,ls="-.")
 
     if aliases is not None:
         for alias in aliases:
@@ -135,7 +148,7 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
 
     return fig, axes_list
 
-def compare_multiple(lightcurves, periodograms, best_periods, threshold,
+def compare_multiple(lightcurves, periodograms, best_periods, thresholds,
                      data_labels, aliases=None, phase_by=None, kwarg_sets=None):
     """Plot multiple sets of lightcurves onto a three-paneled plot.
 
@@ -151,13 +164,13 @@ def compare_multiple(lightcurves, periodograms, best_periods, threshold,
         al0, al1 = None, None
 
     fig, ax_list = plot_one(lightcurves[0], periodograms[0], best_periods[0], 
-                            threshold, aliases=al0,
+                            thresholds[0], aliases=al0,
                             data_label=data_labels[0], phase_by=phase_by)
     #interp_lc = np.interp(lightcurves[1][0], lightcurves[0][0],  
     #                      lightcurves[0][1]
     #residuals = lightcurves[1][1] - lightcurves[0][1]
     fig, ax_list = plot_one(lightcurves[1], periodograms[1], best_periods[1], 
-                            threshold, aliases=al1,
+                            thresholds[1], aliases=al1,
                             data_label=data_labels[1], phase_by=phase_by,
                             axes_list=ax_list)
 
@@ -237,9 +250,7 @@ def plot_xy(xpix, ypix, time, color_by, color_label):
     cbar = fig.colorbar(xyp, ticks=cbar_ticks)
     cbar.set_label(color_label)
 
-    plt.suptitle("TITLE", fontsize="large")
+    #plt.suptitle("TITLE", fontsize="large")
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.94)
-
-    plt.show()

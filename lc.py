@@ -46,11 +46,13 @@ class LightCurve(object):
 
         """
         # Run a fit on the raw lc
-        raw_fp, raw_power, raw_prots, raw_pgram = self._run_fit("raw")
+        r_out = self._run_fit("raw")
+        raw_fp, raw_power, raw_prots, raw_pgram, raw_alias, raw_sigma = r_out
         logging.debug("Ran raw fit")
 
         # Run a fit on the detrended lc
-        det_fp, det_power, det_prots, det_pgram = self._run_fit("detrended")
+        d_out = self._run_fit("detrended")
+        det_fp, det_power, det_prots, det_pgram, det_alias, det_sigma = d_out
         logging.debug("Ran detrended fit")
 
         # Compare them
@@ -61,6 +63,7 @@ class LightCurve(object):
             self.init_periods_to_test, self.init_pgram = raw_prots, raw_pgram
             self.use_flux = self.flux / self.med
             self.use_unc = self.unc_flux / self.med
+            self.init_sigmas = raw_sigma
             data_labels = ["Raw (Selected)", "Detrended"]
         elif lc_to_use==2:
             logging.info("Using detrended lightcurve")
@@ -68,6 +71,7 @@ class LightCurve(object):
             self.init_periods_to_test, self.init_pgram = det_prots, det_pgram
             self.use_flux = self.det_flux 
             self.use_unc = self.unc_flux 
+            self.init_sigmas = det_sigma
             data_labels = ["Raw", "Detrended (Selected)"]
 
         logging.info("Initial Prot %f Power %f", self.init_prot, 
@@ -87,8 +91,10 @@ class LightCurve(object):
                [self.time, self.det_flux, self.det_unc]]
         pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
         best_periods = [raw_fp, det_fp]
+        sigmas = [raw_sigma, det_sigma]
+        logging.debug(sigmas)
         rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
-                                                self.power_threshold, 
+                                                sigmas, 
                                                 aliases=plot_aliases,
                                                 data_labels=data_labels,  
                                                 phase_by=self.init_prot)
@@ -107,7 +113,8 @@ class LightCurve(object):
 
         fit_out = self._run_fit([self.time, self.corrected_flux,
                                  self.corrected_unc])
-        fund_prot, fund_power, periods_to_test, periodogram = fit_out
+        fund_prot, fund_power, periods_to_test, periodogram = fit_out[:4]
+        aliases, sigmas = fit_out[4:]
 
         eval_out =  evaluate.test_pgram(periods_to_test, periodogram, 
                                         self.power_threshold)
@@ -127,8 +134,9 @@ class LightCurve(object):
                   [periods_to_test, periodogram]]
         best_periods = [self.init_prot, fund_prot]
         data_labels = ["Initial", "Corrected"]
+        sigmas = [self.init_sigmas, sigmas]
         rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
-                                                self.power_threshold, 
+                                                sigmas, 
                                                 aliases=plot_aliases,
                                                 data_labels=data_labels,  
                                                 phase_by=fund_prot)
@@ -201,8 +209,10 @@ class LightCurve(object):
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        cl_time, cl_flux, cl_unc, sm_flux = detrend.period_cleaner(tt, ff, uu,
-                    pgram_threshold=self.power_threshold, prot_lims=prot_lims)
+        pc_out = detrend.period_cleaner(tt, ff, uu, 
+                                        pgram_threshold=self.power_threshold, 
+                                        prot_lims=prot_lims)
+        cl_time, cl_flux, cl_unc, sm_flux = pc_out
 
         logging.debug("Smoothed, now periodogram")
         logging.debug("Cleaned t %d f %d u %d", len(cl_time),
@@ -210,10 +220,10 @@ class LightCurve(object):
         # Test the periodogram and pick the best period and power
         ls_out = detrend.run_ls(cl_time, cl_flux, cl_unc, 
                                 threshold=self.power_threshold,
-                                prot_lims=prot_lims)
-        fund_prot, fund_power, periods_to_test, periodogram = ls_out
+                                prot_lims=prot_lims, run_bootstrap=True)
+        #fund_prot, fund_power, periods_to_test, periodogram, aliases, sigmas
 
-        return fund_prot, fund_power, periods_to_test, periodogram
+        return ls_out
 
     def _pick_lc(self, fund_power1, fund_power2):
         """Pick the raw or detrended lc to continue with by 
