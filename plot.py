@@ -5,6 +5,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+import numpy as np
 
 from k2spin import utils
 
@@ -195,3 +196,50 @@ def compare_multiple(lightcurves, periodograms, best_periods, threshold,
 
 
     # plot the raw light curve, with the bulk trend overlaid 
+
+
+def plot_xy(xpix, ypix, time, color_by, color_label):
+    """Plot the position as a function of time 
+    and another value as a function of position."""
+
+    fig = plt.figure(figsize=(8,10))
+
+    base_grid = (10,5)
+
+    # Set up the axes
+    # Top axis - X position as a function of time
+    ax1 = plt.subplot2grid(base_grid, (0, 0), rowspan=3, colspan=5)
+    ax1.set_xlabel("Time (d)")
+    ax1.set_ylabel("Centroid X")
+    
+    # Second axis - Y position as a function of time
+    ax2 = plt.subplot2grid(base_grid, (3, 0), rowspan=3, colspan=5)
+    ax2.set_xlabel("Time (d)")
+    ax2.set_ylabel("Centroid Y")
+
+    # Third axis - a square, showing color_by as a function of X/Y
+    ax3 = plt.subplot2grid(base_grid, (6, 1), rowspan=4, colspan=3)
+    ax3.set_xlabel("Centroid X")
+    ax3.set_ylabel("Centroid Y")
+
+    axes_list = [ax1, ax2, ax3]
+
+    # Now plot
+    axes_list[0].plot(time, xpix, shape1, color=color1, ms=2)
+    axes_list[1].plot(time, ypix, shape1, color=color1, ms=2)
+
+    xyp = axes_list[2].scatter(xpix, ypix, c=color_by, edgecolor="none", 
+                               alpha=0.5, vmin=np.percentile(color_by, 5), 
+                               vmax=np.percentile(color_by, 95),
+                               cmap="gnuplot")
+
+    cbar_ticks = np.asarray(np.percentile(color_by,np.arange(10,100,20)),int)
+    cbar = fig.colorbar(xyp, ticks=cbar_ticks)
+    cbar.set_label(color_label)
+
+    plt.suptitle("TITLE", fontsize="large")
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.94)
+
+    plt.show()
