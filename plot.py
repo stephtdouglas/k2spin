@@ -111,9 +111,12 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
 
     # Middle panel: periodogram
     logging.debug("plot periodograms")
-    print periodogram[0][:10], periodogram[1][:10]
     axes_list[1].plot(periodogram[0], periodogram[1], color=plot_color)
     axes_list[1].axvline(best_period, color=plot_color, linestyle="--")
+
+    xmin = axes_list[1].get_xlim()[0]
+    if xmin<periodogram[0][0]:
+        axes_list[1].set_xlim(xmin=periodogram[0][0])
 
     # Plot the power threshold, if it would be visible
     ymax = axes_list[1].get_ylim()[1]

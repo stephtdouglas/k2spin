@@ -194,7 +194,7 @@ class LightCurve(object):
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
 
-    def _run_fit(self, use_lc, prot_lims=[0.3,70]):
+    def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
         or a array/list of [time, flux, and unc]
         """
@@ -277,7 +277,7 @@ class LightCurve(object):
 
             pix_sep = np.sqrt((xx - comp_x)**2 + (yy - comp_y)**2)
             min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
-            logging.debug(np.median(pix_sep[min_ind]))
+#            logging.debug(np.median(pix_sep[min_ind]))
 
             median_nearest = np.median(comp_f[min_ind])
 #            logging.debug("This flux %f Median Nearest %f", 
