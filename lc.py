@@ -158,14 +158,17 @@ class LightCurve(object):
         logging.debug(use_residuals[:10])
         logging.debug(cor_residuals[:10])
 
-        rd_axes[3].errorbar(self.time, use_residuals, self.use_unc,
+        rd_axes[3].errorbar(self.time % fund_prot, 
+                            use_residuals, self.use_unc,
                             fmt=plot.shape1, ms=2, capsize=0, 
                             ecolor=plot.color1, color=plot.color1,
                             mec=plot.color1)
-        rd_axes[3].errorbar(self.time, cor_residuals, self.corrected_unc,
+        rd_axes[3].errorbar(self.time % fund_prot, 
+                            cor_residuals, self.corrected_unc,
                             fmt=plot.shape2, ms=2, capsize=0, 
                             ecolor=plot.color2, color=plot.color2,  
                             mec=plot.color2)
+        rd_axes[3].set_xlim(0, fund_prot)
 
         plt.savefig("{}_corrected.png".format(self.name))
         plt.show()
@@ -277,8 +280,8 @@ class LightCurve(object):
             logging.debug(np.median(pix_sep[min_ind]))
 
             median_nearest = np.median(comp_f[min_ind])
-            logging.debug("This flux %f Median Nearest %f", 
-                          fval, median_nearest)
+#            logging.debug("This flux %f Median Nearest %f", 
+#                          fval, median_nearest)
             self.corrected_flux[i] = fval / median_nearest
             self.corrected_unc[i] = self.use_unc[i] / median_nearest
 

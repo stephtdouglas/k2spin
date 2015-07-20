@@ -30,7 +30,7 @@ def setup_plots():
     ax2 = plt.subplot2grid(base_grid,(4,0),rowspan=3)
     ax2.set_xlabel("Period (d)")
     ax2.set_xscale("log")
-    ax2.yaxis.set_major_formatter(ticker.ScalarFormatter())
+    ax2.xaxis.set_major_formatter(ticker.ScalarFormatter())
     ax2.set_ylabel("Power (Max=1)")
 
     # Bottom axes should be squished against each other if possible
@@ -38,11 +38,11 @@ def setup_plots():
     # Phased lightcurve and residuals
     ax3 = plt.subplot2grid(base_grid,(7,0),rowspan=2)
     #ax3.tick_params(labelbottom=False)
-    ax3.set_xlabel("Phase (d)")
+    ax3.set_xlabel("Phased time (d)")
     ax3.set_ylabel("Normalized Counts")
 
     ax4 = plt.subplot2grid(base_grid,(9,0),rowspan=2)
-    ax4.set_xlabel("Phase (d)")
+    ax4.set_xlabel("Phased time (d)")
     ax4.set_ylabel("Residuals")
 
     return fig, [ax1, ax2, ax3, ax4]
@@ -99,13 +99,15 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
         plot_color, plot_marker = color2, shape2
 
     # Top panel: lightcurve
-#    axes_list[0].errorbar(lightcurve[0], lightcurve[1], lightcurve[2], lw=0, 
-#                          marker=plot_marker, ecolor=plot_color, mec=plot_color#,
-#                          mfc=plot_color, ms=2, elinewidth=1, capsize=0)
-
     axes_list[0].plot(lightcurve[0], lightcurve[1], lw=0, 
                       marker=plot_marker,  mec=plot_color,
                       mfc=plot_color, ms=2, label=data_label)
+    # Also plot vertical lines for the period
+    phase_mult = np.arange(min(lightcurve[0]), max(lightcurve[0]), 
+                           best_period)
+    for pm in phase_mult:
+        axes_list[0].axvline(pm, color=plot_color, linestyle="--",
+                                 zorder=-100, alpha=0.75)
 
     # Middle panel: periodogram
     logging.debug("plot periodograms")
