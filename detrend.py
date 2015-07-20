@@ -143,13 +143,28 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000,
     fund_period, fund_power, aliases, is_clean  = ls_out
 
     # Now bootstrap to find the typical height of the highest peak
+    # (Use the same time points, but redraw the corresponding flux points
+    # at random, allowing replacement)
     if run_bootstrap:
-        bs_out = time_series.lomb_scargle_bootstrap(time, flux, unc_flux, 
-                                                    omegas_to_test, 
-                                                    generalized=True,
-                                                    N_bootstraps=500)
-        sigmas = np.percentile(bs_out, [99, 95])
-        logging.debug("Fund power: %f 99\% %f 95\% %f", 
+        N_bootstraps = 100
+        n_points = len(flux)
+        ind = np.random.randint(0, n_points, (N_bootstraps, n_points))
+        bs_periods, bs_powers = np.zeros(N_bootstraps), np.zeros(N_bootstraps)
+        for i, f_index in enumerate(ind):
+            bs_pgram = time_series.lomb_scargle(time, flux[f_index], 
+                                                unc_flux[f_index], 
+                                                omegas_to_test,  
+                                                generalized=True)
+            max_loc = np.argmax(bs_pgram)
+            bs_periods[i] = periods_to_test[max_loc]
+            bs_powers[i] = bs_pgram[max_loc]
+
+        logging.debug("Periods and Powers")
+        logging.debug(bs_periods)
+        logging.debug(bs_powers)
+
+        sigmas = np.percentile(bs_powers, [99, 95])
+        logging.debug("Fund power: %f 99p %f 95p %f", 
                       fund_power, sigmas[0], sigmas[1])
     else:
         sigmas=None
