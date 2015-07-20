@@ -7,7 +7,8 @@ import scipy.optimize as opt
 
 from k2spin import utils
 
-def test_pgram(periods, powers, threshold, n_aliases=3):
+def test_pgram(periods, powers, threshold, n_aliases=3, 
+               alias_with=0.25):
     """ID the most likely period and aliases.
 
     Inputs
@@ -18,6 +19,9 @@ def test_pgram(periods, powers, threshold, n_aliases=3):
 
     n_aliases: int
 
+    alias_with: float
+        aliases to search for. Defaults to 0.25 days (6 hrs), the time 
+        between K2 thruster fires
 
     Outputs
     -------
@@ -40,7 +44,7 @@ def test_pgram(periods, powers, threshold, n_aliases=3):
                   fund_power)
 
     # and aliases
-    for_aliases = np.arange(1.0, n_aliases+1.0)
+    for_aliases = np.arange(1.0, n_aliases+1.0) / alias_with
     inverse_fundamental = 1. / fund_period
     pos_aliases = 1. / (inverse_fundamental + for_aliases)
     neg_aliases = 1. / abs(inverse_fundamental - for_aliases)
