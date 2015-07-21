@@ -63,6 +63,22 @@ def sigma_clip(time, flux, unc_flux, clip_at=6):
     # Return clipped lightcurve
     return clipped_time, clipped_flux, clipped_unc, to_keep
 
+def find_thruster_fires(x_pos, y_pos):
+    """Find time points taken during thruster fires."""
+
+    dx = np.diff(x_pos)
+    dy = np.diff(y_pos)
+
+    med_dx = np.median(dx)
+    med_dy = np.median(dy)
+
+    fires = (dx>(2*med_dx)) | (dy>(2*med_dy))
+    # Remove the points before and after the fires
+    keep0 = np.arange(len(x_pos))
+    del_fires = np.append(fires, fires + 1)
+    keep = np.delete(keep0, del_fires)
+
+    return x_pos[keep], y_pos[keep], keep
 
 def prep_lc(time, flux, unc_flux, clip_at=6):
     """Trim, sigma-clip, and calculate stats on a lc.
