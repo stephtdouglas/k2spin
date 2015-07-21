@@ -83,10 +83,13 @@ def prep_lc(time, flux, unc_flux, clip_at=6):
     # Trim the lightcurve, remove bad values
     t_time, t_flux, t_unc, t_kept = trim(time, flux, unc_flux)
 
-    # Run sigma-clipping if desired
+    # Run sigma-clipping if desired, repeat 2X
     if clip_at is not None:
         c_time, c_flux, c_unc, c_kept = sigma_clip(t_time, t_flux, t_unc,
                                                    clip_at=clip_at)
+        c_time, c_flux, c_unc, c_kept2 = sigma_clip(c_time, c_flux, c_unc,
+                                                    clip_at=clip_at)
+        c_kept = c_kept[c_kept2]
     else:
         c_time, c_flux, c_unc, c_kept = t_time, t_flux, t_unc, t_kept
 
