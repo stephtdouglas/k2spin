@@ -4,6 +4,7 @@ import logging
 import itertools
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import ticker
 import numpy as np
 
@@ -102,21 +103,21 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     axes_list[0].plot(lightcurve[0], lightcurve[1], lw=0, 
                       marker=plot_marker,  mec=plot_color,
                       mfc=plot_color, ms=2, label=data_label)
-    # Also plot vertical lines for the period
-    phase_mult = np.arange(min(lightcurve[0]), max(lightcurve[0]), 
-                           best_period)
-    for pm in phase_mult:
-        axes_list[0].axvline(pm, color=plot_color, linestyle="--",
-                                 zorder=-100, alpha=0.75)
+    # Also plot vertical lines for the period if it's longer than 2 days
+    # (shorter than that isn't really comprehensible)
+    if best_period>=2.0:
+        phase_mult = np.arange(min(lightcurve[0]), max(lightcurve[0]), 
+                               best_period)
+        for pm in phase_mult:
+            axes_list[0].axvline(pm, color=plot_color, linestyle="--",
+                                     zorder=-100, alpha=0.75)
 
     # Middle panel: periodogram
     logging.debug("plot periodograms")
     axes_list[1].plot(periodogram[0], periodogram[1], color=plot_color)
     axes_list[1].axvline(best_period, color=plot_color, linestyle="--")
 
-    xmin = axes_list[1].get_xlim()[0]
-    if xmin<periodogram[0][0]:
-        axes_list[1].set_xlim(xmin=periodogram[0][0])
+    axes_list[1].set_xlim(xmin=0.1)
 
     # Plot the power threshold, if it would be visible
     ymax = axes_list[1].get_ylim()[1]
@@ -222,40 +223,58 @@ def plot_xy(xpix, ypix, time, color_by, color_label):
 
     fig = plt.figure(figsize=(8,10))
 
-    base_grid = (10,5)
+    base_grid = (10,8)
 
     # Set up the axes
     # Top axis - X position as a function of time
-    ax1 = plt.subplot2grid(base_grid, (0, 0), rowspan=3, colspan=5)
+    ax1 = plt.subplot2grid(base_grid, (0, 0), rowspan=3, colspan=8)
     ax1.set_xlabel("Time (d)")
     ax1.set_ylabel("Centroid X")
     
     # Second axis - Y position as a function of time
-    ax2 = plt.subplot2grid(base_grid, (3, 0), rowspan=3, colspan=5)
+    ax2 = plt.subplot2grid(base_grid, (3, 0), rowspan=3, colspan=8)
     ax2.set_xlabel("Time (d)")
     ax2.set_ylabel("Centroid Y")
 
-    # Third axis - a square, showing color_by as a function of X/Y
-    ax3 = plt.subplot2grid(base_grid, (6, 1), rowspan=4, colspan=3)
+    # Third axis - a square, showing flux as a function of X/Y
+    ax3 = plt.subplot2grid(base_grid, (6, 0), rowspan=4, colspan=4)
     ax3.set_xlabel("Centroid X")
     ax3.set_ylabel("Centroid Y")
+    divider3 = make_axes_locatable(ax3)
+    cax3 = divider3.append_axes("right", size="5%", pad=0.05)
 
-    axes_list = [ax1, ax2, ax3]
+    # Fourth axis - a square, showing color_by as a function of X/Y
+    ax4 = plt.subplot2grid(base_grid, (6, 4), rowspan=4, colspan=4)
+    ax4.set_xlabel("Centroid X")
+    ax4.set_ylabel("Centroid Y")
+    divider4 = make_axes_locatable(ax4)
+    cax4 = divider4.append_axes("right", size="5%", pad=0.05)
+
+    axes_list = [ax1, ax2, ax3, ax4]
 
     # Now plot
     axes_list[0].plot(time, xpix, shape1, color=color1, ms=2)
     axes_list[1].plot(time, ypix, shape1, color=color1, ms=2)
 
-    xyp = axes_list[2].scatter(xpix, ypix, c=color_by, edgecolor="none", 
+    # Flux
+    xyt = axes_list[2].scatter(xpix, ypix, c=time, edgecolor="none", 
+                               alpha=0.5, vmin=np.percentile(time, 5), 
+                               vmax=np.percentile(time, 95),
+                               cmap="gnuplot")
+
+    cbar_ticks = np.asarray(np.percentile(time,np.arange(10,100,20)),int)
+    cbar1 = fig.colorbar(xyt, cax=cax3, ticks=cbar_ticks)
+    cbar1.set_label("Time (d)")
+
+    # color_by
+    xyp = axes_list[3].scatter(xpix, ypix, c=color_by, edgecolor="none", 
                                alpha=0.5, vmin=np.percentile(color_by, 5), 
                                vmax=np.percentile(color_by, 95),
                                cmap="gnuplot")
 
     cbar_ticks = np.asarray(np.percentile(color_by,np.arange(10,100,20)),int)
-    cbar = fig.colorbar(xyp, ticks=cbar_ticks)
-    cbar.set_label(color_label)
-
-    #plt.suptitle("TITLE", fontsize="large")
+    cbar2 = fig.colorbar(xyp, cax=cax4, ticks=cbar_ticks)
+    cbar2.set_label(color_label)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.94)

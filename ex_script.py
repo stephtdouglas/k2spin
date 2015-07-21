@@ -23,13 +23,9 @@ if __name__=="__main__":
                                 name=lc_file[:-4])
     light_curve.choose_initial()
     light_curve.correct_and_fit()
-"""
+
     plot.plot_xy(light_curve.x_pos, light_curve.y_pos, light_curve.time,
                  light_curve.flux, "Raw Flux")
     plt.suptitle(light_curve.name, fontsize="large")
     plt.savefig(light_curve.name+"_xy_flux.png")
-    plot.plot_xy(light_curve.x_pos, light_curve.y_pos, light_curve.time,
-                 light_curve.time, "Time (d)")
-    plt.suptitle(light_curve.name, fontsize="large")
-    plt.savefig(light_curve.name+"_xy_time.png")
-"""
+    plt.show()
