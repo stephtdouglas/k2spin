@@ -5,6 +5,7 @@ import logging
 import numpy as np
 
 import k2spin.utils as utils
+from k2spin import detrend
 
 def trim(time, flux, unc_flux):
     """Remove infs, NaNs, and negative flux values.
@@ -30,7 +31,22 @@ def trim(time, flux, unc_flux):
 
     return trimmed_time, trimmed_flux, trimmed_unc, good
 
-def sigma_clip(time, flux, unc_flux, clip_at=6):
+def smooth_and_clip(time, flux, unc_flux, clip_at=3):
+    """Smooth the lightcurve, then clip based on residuals."""
+
+    # Smooth with supersmoother without much base enhancement
+    det_out = detrend.simple_detrend(time, flux, unc_flux, phaser=3)
+    detrended_flux, detrended_unc, bulk_trend = det_out
+
+    # Take the difference, and find the standard deviation of the residuals
+    f_diff = flux - bulk_trend
+    diff_std = np.std(f_diff)
+
+    # Clip outliers
+    to_keep = np.where(abs(f_diff)<=(3*clip_at))[0]
+    time, flux, unc_flux = time[to_keep], flux[to_keep], unc_flux[to_keep]
+
+def sigma_clip(time, flux, unc_flux, clip_at=4):
     """Perform sigma-clipping on the lightcurve.
 
     Inputs
