@@ -11,6 +11,7 @@ from k2spin import utils
 from k2spin import clean
 from k2spin import detrend
 from k2spin import plot
+from k2spin import prot
 from k2spin import evaluate
 
 class LightCurve(object):
@@ -212,18 +213,18 @@ class LightCurve(object):
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        pc_out = detrend.period_cleaner(tt, ff, uu, 
-                                        pgram_threshold=self.power_threshold, 
-                                        prot_lims=prot_lims)
+        pc_out = prot.period_cleaner(tt, ff, uu, 
+                                     pgram_threshold=self.power_threshold, 
+                                     prot_lims=prot_lims)
         cl_time, cl_flux, cl_unc, sm_flux = pc_out
 
         logging.debug("Smoothed, now periodogram")
         logging.debug("Cleaned t %d f %d u %d", len(cl_time),
                       len(cl_flux), len(cl_unc))
         # Test the periodogram and pick the best period and power
-        ls_out = detrend.run_ls(cl_time, cl_flux, cl_unc, 
-                                threshold=self.power_threshold,
-                                prot_lims=prot_lims, run_bootstrap=True)
+        ls_out = prot.run_ls(cl_time, cl_flux, cl_unc, 
+                             threshold=self.power_threshold,
+                             prot_lims=prot_lims, run_bootstrap=True)
         #fund_prot, fund_power, periods_to_test, periodogram, aliases, sigmas
 
         return ls_out

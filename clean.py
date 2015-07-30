@@ -34,19 +34,40 @@ def trim(time, flux, unc_flux):
 def smooth_and_clip(time, flux, unc_flux, clip_at=3):
     """Smooth the lightcurve, then clip based on residuals."""
 
+    # Simple sigma clipping first to get rid of really big outliers
+    ct, cf, cu, to_keep = sigma_clip(time, flux, unc_flux, clip_at=6)
+    logging.debug("c len t %d f %d u %d tk %d", len(ct), len(cf),
+                  len(cu), len(to_keep))
+
     # Smooth with supersmoother without much base enhancement
-    det_out = detrend.simple_detrend(time, flux, unc_flux, phaser=3)
-    detrended_flux, detrended_unc, bulk_trend = det_out
+    for i in range(3):
+        logging.debug(i)
+        det_out = detrend.simple_detrend(ct, cf, cu, phaser=3)
+        detrended_flux, detrended_unc, bulk_trend = det_out
 
-    # Take the difference, and find the standard deviation of the residuals
-    f_diff = flux - bulk_trend
-    diff_std = np.std(f_diff)
+        # Take the difference, and find the standard deviation of the residuals
+        logging.debug("flux, bulk trend")
+        logging.debug(cf[:10])
+        logging.debug(bulk_trend[:10])
+        f_diff = cf - bulk_trend
+        diff_std = np.zeros(len(f_diff))
+        diff_std[ct<=2102] = np.std(f_diff[ct<=2102])
+        diff_std[ct>2102] = np.std(f_diff[ct>2102])
 
-    # Clip outliers
-    to_keep = np.where(abs(f_diff)<=(3*clip_at))[0]
-    time, flux, unc_flux = time[to_keep], flux[to_keep], unc_flux[to_keep]
+        logging.debug("len tk %d diff %d", len(to_keep), len(f_diff))
+        # Clip outliers based on residuals this time
+        to_keep = to_keep[abs(f_diff)<=(diff_std*clip_at)]
+        ct = time[to_keep]
+        cf = flux[to_keep]
+        cu = unc_flux[to_keep]
 
-def sigma_clip(time, flux, unc_flux, clip_at=4):
+    clip_time = time[to_keep]
+    clip_flux = flux[to_keep]
+    clip_unc_flux = unc_flux[to_keep]
+
+    return clip_time, clip_flux, clip_unc_flux, to_keep
+
+def sigma_clip(time, flux, unc_flux, clip_at=6):
     """Perform sigma-clipping on the lightcurve.
 
     Inputs
@@ -80,7 +101,7 @@ def sigma_clip(time, flux, unc_flux, clip_at=4):
     return clipped_time, clipped_flux, clipped_unc, to_keep
 
 
-def prep_lc(time, flux, unc_flux, clip_at=6):
+def prep_lc(time, flux, unc_flux, clip_at=3):
     """Trim, sigma-clip, and calculate stats on a lc.
 
     Inputs
@@ -101,11 +122,8 @@ def prep_lc(time, flux, unc_flux, clip_at=6):
 
     # Run sigma-clipping if desired, repeat 2X
     if clip_at is not None:
-        c_time, c_flux, c_unc, c_kept = sigma_clip(t_time, t_flux, t_unc,
-                                                   clip_at=clip_at)
-        c_time, c_flux, c_unc, c_kept2 = sigma_clip(c_time, c_flux, c_unc,
-                                                    clip_at=clip_at)
-        c_kept = c_kept[c_kept2]
+        c_time, c_flux, c_unc, c_kept = smooth_and_clip(t_time, t_flux, t_unc,
+                                                        clip_at=clip_at)
     else:
         c_time, c_flux, c_unc, c_kept = t_time, t_flux, t_unc, t_kept
 
