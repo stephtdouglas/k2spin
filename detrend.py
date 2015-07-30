@@ -5,7 +5,8 @@ import logging
 import numpy as np
 from scipy import interpolate
 import supersmoother
-from astroML import time_series
+#from astroML import time_series
+from gatspy.periodic import lomb_scargle_fast
 
 from k2spin import utils
 from k2spin import clean
@@ -127,17 +128,24 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000,
     logging.debug("run ls t %d f %d u %d", len(time), len(flux),
                   len(unc_flux))
     # Define range of period space to search
-    log_shortp = np.log10(prot_lims[0])
-    log_longp = np.log10(prot_lims[1])
-    delta_p = (log_longp - log_shortp) / (1. * num_prot-1)
-    log_periods = np.arange(log_shortp, log_longp + delta_p, delta_p)
-    periods_to_test = 10**log_periods
-    omegas_to_test = 2.0 * np.pi / periods_to_test
+#    log_shortp = np.log10(prot_lims[0])
+#    log_longp = np.log10(prot_lims[1])
+#    delta_p = (log_longp - log_shortp) / (1. * num_prot-1)
+#    log_periods = np.arange(log_shortp, log_longp + delta_p, delta_p)
+#    periods_to_test = 10**log_periods
+#    omegas_to_test = 2.0 * np.pi / periods_to_test
+
+    freq_term = 1.0 # 2.0 * np.pi
+
+    set_f0 = freq_term / prot_lims[1]
 
     # Search for a period
-    periodogram = time_series.lomb_scargle(time, flux, unc_flux, 
-                                           omegas_to_test, 
-                                           generalized=True)
+    lsf_out = lomb_scargle_fast.lomb_scargle_fast(time, flux, unc_flux, 
+                                                  f0=set_f0, 
+                                                  freq_oversampling=8)
+    omegas_to_test, periodogram = lsf_out
+    logging.debug("omegas pgram %d", len(omegas_to_test))
+    periods_to_test = freq_term / omegas_to_test
 
     ls_out = evaluate.test_pgram(periods_to_test, periodogram, threshold)
     fund_period, fund_power, aliases, is_clean  = ls_out
@@ -151,10 +159,11 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000,
         ind = np.random.randint(0, n_points, (N_bootstraps, n_points))
         bs_periods, bs_powers = np.zeros(N_bootstraps), np.zeros(N_bootstraps)
         for i, f_index in enumerate(ind):
-            bs_pgram = time_series.lomb_scargle(time, flux[f_index], 
-                                                unc_flux[f_index], 
-                                                omegas_to_test,  
-                                                generalized=True)
+            bs_out = lomb_scargle_fast.lomb_scargle_fast(time, flux[f_index], 
+                                                         unc_flux[f_index],  
+                                                         f0=set_f0, 
+                                                         freq_oversampling=8)
+            bs_prot_junk, bs_pgram = bs_out
             max_loc = np.argmax(bs_pgram)
             bs_periods[i] = periods_to_test[max_loc]
             bs_powers[i] = bs_pgram[max_loc]
