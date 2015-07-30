@@ -5,7 +5,8 @@ import logging
 import numpy as np
 from scipy import interpolate
 import supersmoother
-from astroML import time_series
+#from astroML import time_series
+from gatspy.periodic import lomb_scargle_fast
 
 from k2spin import utils
 from k2spin import evaluate

@@ -8,14 +8,7 @@ from k2spin import lc
 from k2spin import k2io
 from k2spin import plot
 
-if __name__=="__main__":
-    logging.basicConfig(level=logging.DEBUG)
-
-    lc_dir = "/home/stephanie/code/python/k2spin/lcs/"
-
-#    lc_file = "EPIC_202533810_xy_ap5.0_3.0_fixbox.dat"
-    lc_file = "EPIC_202521690_xy_ap5.0_3.0_fixbox.dat"
-
+def run_one(filename):
     lc_out = k2io.read_double_aperture(lc_dir+lc_file)
     time, fluxes, unc_fluxes, x_pos, y_pos, qual_flux, apertures = lc_out
     
@@ -29,3 +22,22 @@ if __name__=="__main__":
     plt.suptitle(light_curve.name, fontsize="large")
     plt.savefig(light_curve.name+"_xy_flux.png")
     plt.show()
+
+def run_list(listname,lc_dir="/home/stephanie/code/python/k2spin/lcs/"):
+    
+    at.read("all_lcs.lst",names=["file"])
+
+    for filename in at["file"]:
+        run_one(lc_dir+filename)
+
+
+if __name__=="__main__":
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    lc_dir = "/home/stephanie/code/python/k2spin/lcs/"
+
+#    lc_file = "EPIC_202533810_xy_ap5.0_3.0_fixbox.dat"
+    lc_file = "EPIC_202521690_xy_ap5.0_3.0_fixbox.dat"
+
+    run_one(lc_dir+lc_file)
