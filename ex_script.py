@@ -8,7 +8,7 @@ from k2spin import lc
 from k2spin import k2io
 from k2spin import plot
 
-def run_one(filename)
+def run_one(filename):
     lc_out = k2io.read_double_aperture(lc_dir+lc_file)
     time, fluxes, unc_fluxes, x_pos, y_pos, qual_flux, apertures = lc_out
     
