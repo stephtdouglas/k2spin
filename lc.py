@@ -264,7 +264,7 @@ class LightCurve(object):
         x_pos2 = self.x_pos[first_half==False]
         y_pos2 = self.y_pos[first_half==False]
 
-        for i, fval, xx, yy in itertools.izip(range(num_pts), self.use_flux + 1,
+        for i, fval, xx, yy in itertools.izip(range(num_pts), self.use_flux,
                                               self.x_pos, self.y_pos):
             if first_half[i]:
                 comp_x, comp_y = x_pos1, y_pos1
@@ -280,10 +280,10 @@ class LightCurve(object):
             min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
             logging.debug(np.median(pix_sep[min_ind]))
 
-            median_nearest = np.median(comp_f[min_ind] + 1)
+            median_nearest = np.median(comp_f[min_ind])
             logging.debug("This flux %f Median Nearest %f", 
                           fval, median_nearest)
-            self.corrected_flux[i] = fval / median_nearest - 1
+            self.corrected_flux[i] = fval / median_nearest
             self.corrected_unc[i] = self.use_unc[i] / median_nearest
 
         logging.debug("Correction completed")
