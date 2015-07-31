@@ -31,7 +31,7 @@ class LightCurve(object):
         logging.debug("Threshold %f",self.power_threshold)
 
         # Clean up the input lightcurve
-        cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=6.)
+        cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=3.)
         self.time, self.flux, self.unc_flux = cleaned_out[:3]
         self.med, self.stdev, all_kept = cleaned_out[3:]
         self.x_pos, self.y_pos = x_pos[all_kept], y_pos[all_kept]
@@ -88,7 +88,7 @@ class LightCurve(object):
         plot_aliases = [None, eval_out[2]]
 
         # Plot them up
-        lcs = [[self.time, self.flux/self.med - 1, abs(self.unc_flux/self.med)],
+        lcs = [[self.time, self.flux/self.med, abs(self.unc_flux/self.med)],
                [self.time, self.det_flux, self.det_unc]]
         pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
         best_periods = [raw_fp, det_fp]
