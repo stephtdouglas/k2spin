@@ -105,7 +105,7 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
                       mfc=plot_color, ms=2, label=data_label)
     # Also plot vertical lines for the period if it's longer than 2 days
     # (shorter than that isn't really comprehensible)
-    if best_period>=2.0:
+    if best_period>=1.0:
         phase_mult = np.arange(min(lightcurve[0]), max(lightcurve[0]), 
                                best_period)
         for pm in phase_mult:
