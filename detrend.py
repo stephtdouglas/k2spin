@@ -137,7 +137,7 @@ def simple_detrend(time, flux, unc_flux, kind="supersmoother",
                                            phaser=phaser)
 
     # Actually detrend
-    detrended_flux = flux / bulk_trend - 1
+    detrended_flux = flux / bulk_trend
 
     detrended_unc = unc_flux
 
