@@ -11,6 +11,7 @@ from k2spin import utils
 from k2spin import clean
 from k2spin import detrend
 from k2spin import plot
+from k2spin import prot
 from k2spin import evaluate
 
 class LightCurve(object):
@@ -30,7 +31,7 @@ class LightCurve(object):
         logging.debug("Threshold %f",self.power_threshold)
 
         # Clean up the input lightcurve
-        cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=6.)
+        cleaned_out = clean.prep_lc(time, flux, unc_flux, clip_at=3.)
         self.time, self.flux, self.unc_flux = cleaned_out[:3]
         self.med, self.stdev, all_kept = cleaned_out[3:]
         self.x_pos, self.y_pos = x_pos[all_kept], y_pos[all_kept]
@@ -87,7 +88,7 @@ class LightCurve(object):
         plot_aliases = [None, eval_out[2]]
 
         # Plot them up
-        lcs = [[self.time, self.flux/self.med - 1, abs(self.unc_flux/self.med)],
+        lcs = [[self.time, self.flux/self.med, abs(self.unc_flux/self.med)],
                [self.time, self.det_flux, self.det_unc]]
         pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
         best_periods = [raw_fp, det_fp]
@@ -212,18 +213,18 @@ class LightCurve(object):
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        pc_out = detrend.period_cleaner(tt, ff, uu, 
-                                        pgram_threshold=self.power_threshold, 
-                                        prot_lims=prot_lims)
+        pc_out = prot.period_cleaner(tt, ff, uu, 
+                                     pgram_threshold=self.power_threshold, 
+                                     prot_lims=prot_lims)
         cl_time, cl_flux, cl_unc, sm_flux = pc_out
 
         logging.debug("Smoothed, now periodogram")
         logging.debug("Cleaned t %d f %d u %d", len(cl_time),
                       len(cl_flux), len(cl_unc))
         # Test the periodogram and pick the best period and power
-        ls_out = detrend.run_ls(cl_time, cl_flux, cl_unc, 
-                                threshold=self.power_threshold,
-                                prot_lims=prot_lims, run_bootstrap=True)
+        ls_out = prot.run_ls(cl_time, cl_flux, cl_unc, 
+                             threshold=self.power_threshold,
+                             prot_lims=prot_lims, run_bootstrap=True)
         #fund_prot, fund_power, periods_to_test, periodogram, aliases, sigmas
 
         return ls_out
