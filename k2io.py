@@ -25,18 +25,29 @@ def read_single_aperture(filename):
     lc = at.read(filename, delimiter=' ',data_start=1)
     split_filename = filename.split("/")[-1].split('_')
     logging.debug(split_filename)
-    epicID = split_filename[1]
+    if split_filename[0]=="EPIC":
+        epicID = split_filename[1]
+    else:
+        epicID = split_filename[0] 
     aperture = split_filename[3]
     if aperture.startswith("ap"):
         aperture = aperture[2:]
+    if aperture.endswith(".dat"):
+        aperture = aperture[:-4]
 
     # Extract the useful columns
     time = lc["Dates"]
-    flux = lc["Flux{}".format(aperture)]
-    unc_flux = lc["Uncert{}".format(aperture)]
+    flux = lc["Flux"]
+    try:
+        unc_flux = lc["Uncert{}".format(aperture)]
+    except:
+        unc_flux = np.ones_like(flux)
     x_pos = lc["Xpos"]
     y_pos = lc["Ypos"]
-    qual_flux = lc["Quality"]
+    try:
+        qual_flux = lc["Quality"]
+    except:
+        qual_flux = np.ones_like(flux)
 
     aperture = float(aperture)
 
