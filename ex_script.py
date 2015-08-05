@@ -9,12 +9,20 @@ from k2spin import lc
 from k2spin import k2io
 from k2spin import plot
 
-def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/"):
-    lc_out = k2io.read_double_aperture(lc_dir+filename)
-    time, fluxes, unc_fluxes, x_pos, y_pos, qual_flux, apertures = lc_out
+def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
+            num_apertures=2):
+
+    if num_apertures==2:
+        lc_out = k2io.read_double_aperture(lc_dir+filename)
+        time, fluxes, unc_fluxes, x_pos, y_pos, qual_flux, apertures = lc_out
+        flux = fluxes[1]
+        unc_flux = unc_fluxes[2]
+    else:
+        lc_out = k2io.read_single_aperture(lc_dir+filename)
+        time, flux, unc_flux, x_pos, y_pos, qual_flux, aperture = lc_out
     
-    light_curve = lc.LightCurve(time, fluxes[1], unc_fluxes[1], x_pos, y_pos,
-                                name=filename[:-4])
+    light_curve = lc.LightCurve(time, flux, unc_flux, x_pos, y_pos,
+                                name=filename.split("/")[-1][:-4])
     light_curve.choose_initial()
     light_curve.correct_and_fit()
 
@@ -25,18 +33,19 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/"):
 #    plt.show()
     plt.close("all")
 
-def run_list(listname,lc_dir="/home/stephanie/code/python/k2spin/lcs/"):
+def run_list(listname,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
+             num_apertures=2):
     
     lcs = at.read(listname,names=["file"])
 
     for i, filename in enumerate(lcs["file"]):
         logging.info("%d %s",i,filename)
-        run_one(filename)
+        run_one(filename,lc_dir,num_apertures=num_apertures)
 
 
 if __name__=="__main__":
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     lc_dir = "/home/stephanie/code/python/k2spin/lcs/"
 
@@ -45,4 +54,5 @@ if __name__=="__main__":
 
 #    run_one(lc_file)
 
-    run_list("all_lcs.lst")
+#    run_list("all_lcs.lst")
+    run_list("M35_lcs.lst",num_apertures=1)
