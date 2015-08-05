@@ -45,7 +45,7 @@ def run_list(listname,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
 
 if __name__=="__main__":
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     lc_dir = "/home/stephanie/code/python/k2spin/lcs/"
 

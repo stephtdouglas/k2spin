@@ -134,9 +134,22 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
             logging.debug(threshold)
             axes_list[1].axhline(threshold,color=plot_color,ls="-.")
 
+    # Plot aliases, if provided
     if aliases is not None:
         for alias in aliases:
             axes_list[1].axvline(alias, color=plot_color, linestyle=":")
+
+    # Plot harmonics
+    harmonics = np.array([0.5, 2])*best_period
+    for harm in harmonics:
+        axes_list[1].axvline(harm, color=plot_color, linestyle="--",
+                             alpha=0.5)
+
+    # Plot harmonics of the thruster firing time
+    harmonics = np.append(0.125,np.arange(0.25,1.6,0.25))
+    for harm in harmonics:
+        axes_list[1].axvline(harm, color="LightGrey", linestyle="-",
+                             alpha=0.5, zorder=-111)
 
     # Bottom panels: phased lightcurve
     if phase_by is None:
