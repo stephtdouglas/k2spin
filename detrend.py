@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 from scipy import interpolate
+import matplotlib.pyplot as plt
 import supersmoother
 #from astroML import time_series
 from gatspy.periodic import lomb_scargle_fast
@@ -103,7 +104,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
     return white_flux, white_unc, smoothed_flux
 
 def simple_detrend(time, flux, unc_flux, kind="supersmoother",
-                   phaser=None):
+                   phaser=None, to_plot=False):
     """Remove bulk trends from the LC
 
     Inputs
@@ -140,6 +141,25 @@ def simple_detrend(time, flux, unc_flux, kind="supersmoother",
     detrended_flux = flux / bulk_trend
 
     detrended_unc = unc_flux
+
+    if to_plot:
+        plt.figure(figsize=(10,8))
+        ax1 = plt.subplot(311)
+        ax1.plot(time, flux, 'k.')
+        ax1.plot(time, bulk_trend, 'b-',lw=3)
+        ax1.set_ylabel("Counts",fontsize="large")
+        ax1.tick_params(labelleft=False, labelright=True)
+
+        ax2 = plt.subplot(312)
+        ax2.plot(time, w_flux, 'g.')
+        ax2.set_ylabel("Flux - Bulk Trend",fontsize="large")
+        ax2.tick_params(labelleft=False, labelright=True)
+
+        ax3 = plt.subplot(313)
+        ax3.plot(time, detrended_flux, 'r.')
+        ax3.set_xlabel("Time (d)")
+        ax3.set_ylabel("Flux / Bulk Trend",fontsize="large")
+        ax3.tick_params(labelleft=False, labelright=True)
 
     # Return detrended
     return detrended_flux, detrended_unc, bulk_trend 

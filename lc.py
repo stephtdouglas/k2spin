@@ -189,11 +189,16 @@ class LightCurve(object):
 
         logging.debug("Removing bulk trend...")
         det_out = detrend.simple_detrend(self.time, self.flux, self.unc_flux,
-                                         kind="supersmoother", phaser=alpha)
+                                         kind="supersmoother", phaser=alpha,
+                                         to_plot=True)
         self.det_flux, self.det_unc, self.bulk_trend = det_out
 
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
+
+        fig = plt.gcf()
+        fig.suptitle("{}; alpha={}".format(self.name, alpha),fontsize="x-large")
+        plt.savefig("{}_detrend.png".format(self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
