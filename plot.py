@@ -139,7 +139,7 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
         for alias in aliases:
             axes_list[1].axvline(alias, color=plot_color, linestyle=":")
 
-    # Plot harmonics
+    # Plot harmonics of the best period
     harmonics = np.array([0.5, 2])*best_period
     for harm in harmonics:
         axes_list[1].axvline(harm, color=plot_color, linestyle="--",
