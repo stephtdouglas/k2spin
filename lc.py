@@ -177,14 +177,13 @@ class LightCurve(object):
 
 
 
-    def _bulk_detrend(self, alpha=8):
+    def _bulk_detrend(self, alpha=10):
         """Smooth the rapid variations in the lightcurve and remove bulk trends.
 
         inputs
         ------
         alpha: float
             "bass enhancement" for supersmoother. 
-            Defaults to 8 for now because Kevin was using that. 
         """
 
         logging.debug("Removing bulk trend...")
@@ -283,11 +282,11 @@ class LightCurve(object):
 
             pix_sep = np.sqrt((xx - comp_x)**2 + (yy - comp_y)**2)
             min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
-            logging.debug(np.median(pix_sep[min_ind]))
+            #logging.debug(np.median(pix_sep[min_ind]))
 
             median_nearest = np.median(comp_f[min_ind])
-            logging.debug("This flux %f Median Nearest %f", 
-                          fval, median_nearest)
+            #logging.debug("This flux %f Median Nearest %f", 
+            #              fval, median_nearest)
             self.corrected_flux[i] = fval / median_nearest
             self.corrected_unc[i] = self.use_unc[i] / median_nearest
 

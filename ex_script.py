@@ -45,7 +45,7 @@ def run_list(listname,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
 
 if __name__=="__main__":
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     lc_dir = "/home/stephanie/code/python/k2spin/lcs/"
 
@@ -54,5 +54,5 @@ if __name__=="__main__":
 
 #    run_one(lc_file,num_apertures=2)
 
-    run_list("test_usco.lst",num_apertures=2)
+#    run_list("test_usco.lst",num_apertures=2)
     run_list("test_M35.lst",num_apertures=1)
