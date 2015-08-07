@@ -208,8 +208,8 @@ class LightCurve(object):
 
         if detrend_kwargs is None:
             detrend_kwargs = dict()
-        detrend_kwargs["phaser"] = detrend_kwargs.get("phaser", 10)
         detrend_kwargs["kind"] = detrend_kwargs.get("kind", "supersmoother")
+        detrend_kwargs["phaser"] = detrend_kwargs.get("phaser", None)
 
         logging.debug("Removing bulk trend...")
         det_out = detrend.simple_detrend(self.time, self.flux, self.unc_flux,

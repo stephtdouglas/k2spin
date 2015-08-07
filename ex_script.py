@@ -23,8 +23,7 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
     
     light_curve = lc.LightCurve(time, flux, unc_flux, x_pos, y_pos,
                                 name=filename.split("/")[-1][:-4],
-                                detrend_kwargs={"kind":"boxcar",
-                                                "phaser":20})
+                                detrend_kwargs={"kind":"linear"})
     light_curve.choose_initial()
     light_curve.correct_and_fit()
 

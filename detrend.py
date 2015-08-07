@@ -26,7 +26,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     kind: string, optional
         type of smoothing to use. Defaults to "supersmoother."
-        Other types YET TO BE IMPLEMENTED are "boxcar", "linear"
+        Other types are "boxcar", "linear" 
 
     which: string, optional
         whether to smooth the "phased" lightcurve (default) or the "full" 
@@ -49,6 +49,11 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
         phased_time = time
 
     if kind.lower()=="supersmoother":
+
+        if phaser is None:
+            logging.warning("Phaser not set! "
+                            "Set phaser=alpha (bass-enhancement value "
+                            "for supersmoother) if desired.")
 
         if which.lower()=="phased":
             # Instantiate the supersmoother model object with the input period
@@ -76,6 +81,11 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     elif kind.lower()=="boxcar":
 
+        if phaser is None:
+            logging.warning("Phaser not set! "
+                            "Set phaser to the width of the smoothing "
+                            "box in pixels!")
+
         if which.lower()=="phased":
             # sort the phases
             sort_locs = np.argsort(phased_time)
@@ -94,18 +104,31 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
         y_fit = convolution.convolve(flux_to_fit, boxcar_kernel,
                                      boundary="wrap")
 
+    elif kind=="linear":
+
+         if which!="full":
+             logging.warning("Linear smoothing only allowed for full "
+                             "lightcurve! Switching to full mode.")
+             which = "full"
+
+         # Fit a line to the data
+         pars = np.polyfit(time, flux, deg=1)
+         m, b = pars
+         smoothed_flux = m * time + b
+
     else:
         logging.warning("unknown kind %s !!!",kind)
 
-    # Interpolate back onto the original time array
-    interp_func = interpolate.interp1d(x_vals, y_fit)
+    if (kind=="supersmoother") or (kind=="boxcar"):
+        # Interpolate back onto the original time array
+        interp_func = interpolate.interp1d(x_vals, y_fit)
 
-    if which.lower()=="phased":
-        smoothed_flux = interp_func(phased_time)
-    elif which.lower()=="full":
-        smoothed_flux = interp_func(time)
-    else:
-        logging.warning("unknown which %s !!!",which)
+        if which.lower()=="phased":
+            smoothed_flux = interp_func(phased_time)
+        elif which.lower()=="full":
+            smoothed_flux = interp_func(time)
+        else:
+            logging.warning("unknown which %s !!!",which)
 
     # Whiten the input flux by subtracting the smoothed version
     # The smoothed flux represents the "bulk trend"
