@@ -137,8 +137,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     return white_flux, white_unc, smoothed_flux
 
-def simple_detrend(time, flux, unc_flux, kind="supersmoother",
-                   phaser=None, to_plot=False):
+def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
     """Remove bulk trends from the LC
 
     Inputs
@@ -167,9 +166,8 @@ def simple_detrend(time, flux, unc_flux, kind="supersmoother",
     # Maybe I should do something here to set alpha/the window size
     # for supersmoother
     w_flux, w_unc, bulk_trend = pre_whiten(time, flux, unc_flux, 
-                                           period=None, kind=kind, 
-                                           which="full",  
-                                           phaser=phaser)
+                                           period=None, which="full",  
+                                           **detrend_kwargs)
 
     # Actually detrend
     detrended_flux = flux / bulk_trend
