@@ -22,7 +22,9 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
         time, flux, unc_flux, x_pos, y_pos, qual_flux, aperture = lc_out
     
     light_curve = lc.LightCurve(time, flux, unc_flux, x_pos, y_pos,
-                                name=filename.split("/")[-1][:-4])
+                                name=filename.split("/")[-1][:-4],
+                                detrend_kwargs={"kind":"supersmoother",
+                                                "phaser":8})
     light_curve.choose_initial()
     light_curve.correct_and_fit()
 
@@ -52,7 +54,7 @@ if __name__=="__main__":
 #    lc_file = "EPIC_202533810_xy_ap5.0_3.0_fixbox.dat"
     lc_file = "EPIC_202521690_xy_ap5.0_3.0_fixbox.dat"
 
-#    run_one(lc_file,num_apertures=2)
+    run_one(lc_file,num_apertures=2)
 
 #    run_list("test_usco.lst",num_apertures=2)
-    run_list("test_M35.lst",num_apertures=1)
+#    run_list("test_M35.lst",num_apertures=1)

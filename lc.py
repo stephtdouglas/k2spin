@@ -21,8 +21,28 @@ class LightCurve(object):
     """
 
     def __init__(self, time, flux, unc_flux, x_pos, y_pos, name, 
-                 power_threshold=0.5):
-        """Clean up the input data and sigma-clip it."""
+                 power_threshold=0.5, detrend_kwargs=None):
+        """Clean up the input data and sigma-clip it.
+
+        input
+        -----
+        time, flux, unc_flux: array-like
+            the lightcurve
+
+        x_pos, y_pos: array-like
+            centroid pixel positions
+
+        name: string
+
+        power_threshold: float (should remove...)
+
+        detrend_kwargs: dict
+            kind: string (default supersmoother)
+                "supersmoother","boxcar", or "linear" 
+            phaser: float, optional
+                alpha, half-width of smoothing window, or None (respectively)
+
+        """
         # Save the power threshold for later use
         self.power_threshold = power_threshold
         self.name = name
@@ -39,7 +59,7 @@ class LightCurve(object):
                       len(self.flux),len(self.unc_flux))
 
         # Detrend the raw flux
-        self._bulk_detrend()
+        self._bulk_detrend(detrend_kwargs)
 
     def choose_initial(self):
         """Search raw and detrended LCs for periods, and decide whether there's
@@ -177,7 +197,7 @@ class LightCurve(object):
 
 
 
-    def _bulk_detrend(self, alpha=10):
+    def _bulk_detrend(self, detrend_kwargs):
         """Smooth the rapid variations in the lightcurve and remove bulk trends.
 
         inputs
@@ -186,17 +206,22 @@ class LightCurve(object):
             "bass enhancement" for supersmoother. 
         """
 
+        if detrend_kwargs is None:
+            detrend_kwargs = dict()
+        detrend_kwargs["phaser"] = detrend_kwargs.get("phaser", 10)
+        detrend_kwargs["kind"] = detrend_kwargs.get("kind", "supersmoother")
+
         logging.debug("Removing bulk trend...")
         det_out = detrend.simple_detrend(self.time, self.flux, self.unc_flux,
-                                         kind="supersmoother", phaser=alpha,
-                                         to_plot=True)
+                                         to_plot=True, **detrend_kwargs)
         self.det_flux, self.det_unc, self.bulk_trend = det_out
 
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
 
         fig = plt.gcf()
-        fig.suptitle("{}; alpha={}".format(self.name, alpha),fontsize="x-large")
+        fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
+                     detrend_kwargs["phaser"]),fontsize="x-large")
         plt.savefig("{}_detrend.png".format(self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):

@@ -25,7 +25,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     kind: string, optional
         type of smoothing to use. Defaults to "supersmoother."
-        Other types YET TO BE IMPLEMENTED are "boxcar"
+        Other types YET TO BE IMPLEMENTED are "boxcar", "linear"
 
     which: string, optional
         whether to smooth the "phased" lightcurve (default) or the "full" 
