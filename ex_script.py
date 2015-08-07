@@ -10,7 +10,7 @@ from k2spin import k2io
 from k2spin import plot
 
 def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
-            num_apertures=2):
+            num_apertures=2, detrend_kwargs=None):
 
     if num_apertures==2:
         lc_out = k2io.read_double_aperture(lc_dir+filename)
@@ -23,7 +23,7 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
     
     light_curve = lc.LightCurve(time, flux, unc_flux, x_pos, y_pos,
                                 name=filename.split("/")[-1][:-4],
-                                detrend_kwargs={"kind":"linear"})
+                                detrend_kwargs=detrend_kwargs)
     light_curve.choose_initial()
     light_curve.correct_and_fit()
 
@@ -35,13 +35,14 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
     plt.close("all")
 
 def run_list(listname,lc_dir="/home/stephanie/code/python/k2spin/lcs/",
-             num_apertures=2):
+             num_apertures=2, detrend_kwargs=None):
     
     lcs = at.read(listname,names=["file"])
 
     for i, filename in enumerate(lcs["file"]):
         logging.info("%d %s",i,filename)
-        run_one(filename,lc_dir,num_apertures=num_apertures)
+        run_one(filename, lc_dir, num_apertures=num_apertures,
+                detrend_kwargs=detrend_kwargs)
 
 
 if __name__=="__main__":
@@ -53,7 +54,10 @@ if __name__=="__main__":
 #    lc_file = "EPIC_202533810_xy_ap5.0_3.0_fixbox.dat"
     lc_file = "EPIC_202521690_xy_ap5.0_3.0_fixbox.dat"
 
-    run_one(lc_file,num_apertures=2)
+    run_one(lc_file, num_apertures=2, 
+             detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-#    run_list("test_usco.lst",num_apertures=2)
-#    run_list("test_M35.lst",num_apertures=1)
+#    run_list("test_usco.lst", num_apertures=2, 
+#             detrend_kwargs={"kind":"supersmoother","phaser":10})
+#    run_list("test_M35.lst", num_apertures=1,
+#             detrend_kwargs={"kind":"linear"})
