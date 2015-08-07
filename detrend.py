@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import supersmoother
 #from astroML import time_series
 from gatspy.periodic import lomb_scargle_fast
+from astropy import convolution
 
 from k2spin import utils
 from k2spin import evaluate
@@ -49,7 +50,6 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     if kind.lower()=="supersmoother":
 
-
         if which.lower()=="phased":
             # Instantiate the supersmoother model object with the input period
             model = supersmoother.SuperSmoother(period=period)
@@ -75,13 +75,24 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
 
     elif kind.lower()=="boxcar":
-        logging.warning("boxcar is not yet implemented.")
-        # sort the phases
 
-        # Stitch 3X the phased lightcurve together to avoid edge effects
-        # I *think* I don't have to do this, and I can just force it to wrap
+        if which.lower()=="phased":
+            # sort the phases
+            sort_locs = np.argsort(phased_time)
+            x_vals = phased_time[sort_locs]
+            flux_to_fit = flux[sort_locs]
 
-        # loop through and construct the moving average
+        elif which.lower()=="full":
+            x_vals = time
+            flux_to_fit = flux
+        else:
+            logging.warning("unknown which %s !!!",which)
+
+        # Use astropy's convolution function!
+        boxcar_kernel = convolution.Box1DKernel(width=phaser,
+                                                mode="linear_interp")
+        y_fit = convolution.convolve(flux_to_fit, boxcar_kernel,
+                                     boundary="wrap")
 
     else:
         logging.warning("unknown kind %s !!!",kind)
