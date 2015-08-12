@@ -57,7 +57,7 @@ if __name__=="__main__":
     run_one(lc_file, num_apertures=2, 
              detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-    run_list("test_usco.lst", num_apertures=2, 
-             detrend_kwargs={"kind":"supersmoother","phaser":10})
-    run_list("test_M35.lst", num_apertures=1,
-             detrend_kwargs={"kind":"linear"})
+#    run_list("test_usco.lst", num_apertures=2, 
+#             detrend_kwargs={"kind":"supersmoother","phaser":10})
+#    run_list("test_M35.lst", num_apertures=1,
+#             detrend_kwargs={"kind":"linear"})
