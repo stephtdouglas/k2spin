@@ -93,29 +93,3 @@ def test_pgram(periods, powers, threshold, n_aliases=3,
     # Return best_period, best_power, aliases, is_clean
     return fund_period, fund_power, aliases, is_clean
 
-
-def fit_sine(time, flux, unc, period):
-    """Fit a simple sine model fixed to the best-fit period."""
-
-    def _sine_model(t, amp, yoffset, tshift):
-        return amp * np.sin(2 * np.pi * t / period + tshift) + yoffset
-
-    # Phase by the period, then extend the arrays 
-    # To fit two cycles instead of one
-    phased_time = utils.phase(time, period)
-    fit_time = np.append(phased_time, phased_time + period)
-    fit_flux = np.append(flux, flux)
-    fit_unc = np.append(unc, unc)
-
-    # initial amplitude and yoffset are stdev and median, respectively
-    p0 = np.append(utils.stats(flux, unc), 0.0)
-
-    popt, pcov = opt.curve_fit(_sine_model, fit_time, fit_flux, 
-                                sigma=fit_unc, p0=p0)
-    perr = np.sqrt(np.diag(pcov))
-
-    logging.debug("amplitude, yoffset, tshift")
-    logging.debug(popt)
-    logging.debug(perr)
-
-    return phased_time, _sine_model(phased_time, *popt)
