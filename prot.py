@@ -5,6 +5,8 @@ import logging
 
 import numpy as np
 from scipy import interpolate
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 import supersmoother
 from astroML import time_series
 from gatspy.periodic import lomb_scargle_fast
@@ -13,8 +15,9 @@ from k2spin import utils
 from k2spin import clean
 from k2spin import evaluate
 from k2spin import detrend
+from k2spin import plot
 
-def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000,
+def run_ls(time, flux, unc_flux, threshold, prot_lims=None, 
            run_bootstrap=False):
     """Run a periodogram and return it.
 
@@ -87,9 +90,8 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None, num_prot=1000,
     return (fund_period, fund_power, periods_to_test, periodogram, 
             aliases, sigmas)
 
-def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
-                       which="phased",phaser=None, pgram_threshold=None,
-                       prot_lims=None, num_prot=1000):
+def search_and_detrend(time, flux, unc_flux, prot_lims=None,
+                       to_plot=False, **detrend_kwargs):
     """Test for a period and then pre-whiten with it.
 
     Inputs
@@ -98,7 +100,7 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
 
     kind: string, optional
         type of smoothing to use. Defaults to "supersmoother."
-        Other types YET TO BE IMPLEMENTED are "boxcar"
+        Other types "boxcar", "linear"
 
     which: string, optional
         whether to smooth the "phased" lightcurve (default) or the "full" 
@@ -123,27 +125,37 @@ def search_and_detrend(time, flux, unc_flux, kind="supersmoother",
 
     """
 
-    logging.debug("S&T threshold %f",pgram_threshold)
-
     # Search for periodogram
-    ls_out = run_ls(time, flux, unc_flux, pgram_threshold,  
-                    prot_lims=prot_lims, num_prot=num_prot)
+    ls_out = run_ls(time, flux, unc_flux, 0.5,  
+                    prot_lims=prot_lims)
     fund_period, fund_power, periods_to_test, periodogram = ls_out[:4]
                                                        
-                                                       
-
     # Whiten on that period
     white_out = detrend.pre_whiten(time, flux, unc_flux, fund_period,  
-                                   kind=kind, which=which, 
-                                   phaser=phaser)
+                                   which="phased", **detrend_kwargs)
 
     white_flux, white_unc, smoothed_flux = white_out
 
-    # Return the period, periodogram, and whitened lc
-    return [fund_period, fund_power, periods_to_test, periodogram, white_flux,
-            white_unc, smoothed_flux]
+    detrended_flux = flux / smoothed_flux
+    detrended_unc = unc_flux
 
-def period_cleaner(time, flux, unc_flux, prot_lims, pgram_threshold):
+    if to_plot==True:
+        fig, ax_list = plot.plot_one([time, flux, unc_flux],
+                                     [periods_to_test, periodogram],
+                                     fund_period,
+                                     power_threshold=0, data_label="Input")
+        ax_list[0].plot(time, smoothed_flux, 'b.')
+
+        ax_list[3].plot(time, white_flux, 'r.')
+        ax_list[3].set_ylabel("Whitened Flux")
+        ax_list[3].set_xlabel("Time (D)")
+        plt.tight_layout()
+
+    # Return the detrended flux
+    return detrended_flux, detrended_unc, fund_period, fund_power
+
+def detrend_for_correction(time, flux, unc_flux, prot_lims,
+                           to_plot=False, **detrend_kwargs):
     """Test for a period and then pre-whiten with it.
 
     Inputs
@@ -153,48 +165,61 @@ def period_cleaner(time, flux, unc_flux, prot_lims, pgram_threshold):
     prot_lims: list-like, length=2
         minimum and maximum rotation periods to search
 
-    num_prot: integer
-        How many rotation periods to search
+    to_plot: bool (default=False)
+        Whether to plot each step of the detrending process
 
     Outputs
     -------
-    clip_time, white_flux, white_unc, smoothed_flux: arrays
+    det_flux, det_unc: arrays
 
     """
 
-    # Sigma clip the input light curve
-    clip_time, clip_flux, clip_unc, kept = clean.sigma_clip(time, flux, 
-                                                            unc_flux, 
-                                                            clip_at=6)
-    logging.debug("Finished sigma-clipping")
+    # Set up the plot
+    if to_plot==True:
+        filename = detrend_kwargs.get("filename","unknown_detrending.pdf")
+        junk = detrend_kwargs.pop("filename")
+        if filename.endswith(".pdf")==False:
+            filename = filename+".pdf"
+        pp = PdfPages(filename)
 
-    # Perform 1-2 whitenings 
-    # (this always whitens twice???)
-    for iteration in range(2):
+    det_flux = np.copy(flux)
+    det_unc = np.copy(unc_flux)
+
+    # Whiten 4 times
+    for iteration in range(6):
 
         # search and whiten once
-        search_out = search_and_detrend(clip_time, clip_flux, clip_unc,
-                                        pgram_threshold=pgram_threshold,
-                                        prot_lims=prot_lims,
-                                        num_prot=1000)
+        det_out = search_and_detrend(time, det_flux, det_unc, 
+                                     prot_lims=prot_lims, to_plot=to_plot, 
+                                     **detrend_kwargs)
+        det_flux, det_unc, fund_period, fund_power = det_out
+        if iteration==0:
+            base_power = fund_power
 
-        fund_period, fund_power, periods_to_test, periodogram = search_out[:4]
-        white_flux, white_unc, smoothed_flux = search_out[-3:]
+        # Do not sigma-clip - I think we need the same points in the
+        # input and output lcs for correction
 
-        # Stats on the pre-whitened lc
-        white_med, white_std = utils.stats(white_flux, white_unc)
+        if to_plot:
+            pp.savefig()
+            #plt.close()
 
-        # Sigma-clip the testing lc
-        clip_time, clip_flux, clip_unc, kept = clean.sigma_clip(clip_time, 
-                                                                white_flux, 
-                                                                white_unc, 
-                                                                clip_at=6)
+        # Stop iterating if we've gotten to a small multiple of the 
+        # 6-hour period
+        fund_div = (fund_period / 0.25)
+        fd_round = np.round(fund_div, 0)
+        if (fund_period <=2.05) and (abs(fund_div - fd_round)<0.05):
+            logging.warning("Stopped detrending; prot={0:.3f} fd={1:.4f} {2:.4f}".format(fund_period, fund_div, fd_round))
+            break
+        elif fund_power <= 0.1*base_power:
+            logging.warning("Stopped detrending; base power {0:.3f} "
+                            "fund power {1:.3f}".format(base_power, fund_power))
+            break
+        else:
+            logging.warning("prot {0:.3f} power {1:.3f} fund_div {2:.3f} {3}".format(fund_period, fund_power, fund_div, fd_round))
+
+    pp.close()
 
 
-    # Pre-whiten the full lc based on the final period
-    white_out = detrend.pre_whiten(time, flux, unc_flux, fund_period)
-    white_flux, white_unc, smoothed_flux = white_out
-
-    # Return the newly whitened lightcurve and the bulk trend
-    return time, white_flux, white_unc, smoothed_flux
+    # Return the newly detrended lightcurve and the bulk trend
+    return det_flux, det_unc
 

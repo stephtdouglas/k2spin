@@ -275,7 +275,7 @@ class LightCurve(object):
 
         return to_use
 
-    def _xy_correct(self, n_closest=21):
+    def _xy_correct(self, correct_with=None, n_closest=21):
         """Correct for positional variations in the lightcurve once selected."""
         
         # Loop through the lightcurve and find the n closest pixels.
@@ -283,6 +283,9 @@ class LightCurve(object):
 
         num_pts = len(self.use_flux)
         logging.debug("Pixel position correction %d", num_pts)
+
+        if correct_with is None:
+            correct_with = self.use_flux
 
         self.corrected_flux = np.zeros(num_pts)
         self.corrected_unc = np.zeros(num_pts)
@@ -297,10 +300,10 @@ class LightCurve(object):
                                               self.x_pos, self.y_pos):
             if first_half[i]:
                 comp_x, comp_y = x_pos1, y_pos1
-                comp_f = self.use_flux[first_half==True]
+                comp_f = correct_with[first_half==True]
             else:
                 comp_x, comp_y = x_pos2, y_pos2
-                comp_f = self.use_flux[first_half==False]
+                comp_f = correct_with[first_half==False]
 
 #            comp_x, comp_y = self.x_pos, self.y_pos
 #            comp_f = self.use_flux
