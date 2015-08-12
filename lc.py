@@ -132,13 +132,14 @@ class LightCurve(object):
 
         self._xy_correct()
 
+        # This MIGHT need to change - consider
         fit_out = self._run_fit([self.time, self.corrected_flux,
                                  self.corrected_unc])
         fund_prot, fund_power, periods_to_test, periodogram = fit_out[:4]
         aliases, sigmas = fit_out[4:]
 
-        eval_out =  evaluate.test_pgram(periods_to_test, periodogram, 
-                                        self.power_threshold)
+        eval_out = evaluate.test_pgram(periods_to_test, periodogram, 
+                                       self.power_threshold)
 
         self.corrected_prot = fund_prot
 
@@ -241,20 +242,9 @@ class LightCurve(object):
 
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
-        # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        pc_out = prot.period_cleaner(tt, ff, uu, 
-                                     pgram_threshold=self.power_threshold, 
-                                     prot_lims=prot_lims)
-        cl_time, cl_flux, cl_unc, sm_flux = pc_out
-
-        logging.debug("Smoothed, now periodogram")
-        logging.debug("Cleaned t %d f %d u %d", len(cl_time),
-                      len(cl_flux), len(cl_unc))
-        # Test the periodogram and pick the best period and power
-        ls_out = prot.run_ls(cl_time, cl_flux, cl_unc, 
-                             threshold=self.power_threshold,
+        # Run a basic periodogram
+        ls_out = prot.run_ls(tt, ff, uu, threshold=self.power_threshold, 
                              prot_lims=prot_lims, run_bootstrap=True)
-        #fund_prot, fund_power, periods_to_test, periodogram, aliases, sigmas
 
         return ls_out
 
