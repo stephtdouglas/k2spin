@@ -122,8 +122,8 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
     # Plot the power threshold, if it would be visible
     ymax = axes_list[1].get_ylim()[1]
     logging.debug("ymax %f", ymax)
-    if (type(power_threshold)==float and 
-        power_threshold<ymax):
+    if (((type(power_threshold)==float) or (type(power_threshold)==int))
+        and power_threshold<ymax):
         # Only one threshold
         axes_list[1].axhline(power_threshold,color="Grey",ls="-.")
     elif (type(power_threshold)==float and 
@@ -146,7 +146,7 @@ def plot_one(lightcurve, periodogram, best_period, power_threshold, data_label,
                              alpha=0.5)
 
     # Plot harmonics of the thruster firing time
-    harmonics = np.append(0.125,np.arange(0.25,1.6,0.25))
+    harmonics = np.append(0.125,np.arange(0.25,2.1,0.25))
     for harm in harmonics:
         axes_list[1].axvline(harm, color="LightGrey", linestyle="-",
                              alpha=0.5, zorder=-111)
