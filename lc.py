@@ -21,8 +21,28 @@ class LightCurve(object):
     """
 
     def __init__(self, time, flux, unc_flux, x_pos, y_pos, name, 
-                 power_threshold=0.5):
-        """Clean up the input data and sigma-clip it."""
+                 power_threshold=0.5, detrend_kwargs=None):
+        """Clean up the input data and sigma-clip it.
+
+        input
+        -----
+        time, flux, unc_flux: array-like
+            the lightcurve
+
+        x_pos, y_pos: array-like
+            centroid pixel positions
+
+        name: string
+
+        power_threshold: float (should remove...)
+
+        detrend_kwargs: dict
+            kind: string (default supersmoother)
+                "supersmoother","boxcar", or "linear" 
+            phaser: float, optional
+                alpha, half-width of smoothing window, or None (respectively)
+
+        """
         # Save the power threshold for later use
         self.power_threshold = power_threshold
         self.name = name
@@ -39,7 +59,7 @@ class LightCurve(object):
                       len(self.flux),len(self.unc_flux))
 
         # Detrend the raw flux
-        self._bulk_detrend()
+        self._bulk_detrend(detrend_kwargs)
 
     def choose_initial(self):
         """Search raw and detrended LCs for periods, and decide whether there's
@@ -191,23 +211,32 @@ class LightCurve(object):
 
 
 
-    def _bulk_detrend(self, alpha=8):
+    def _bulk_detrend(self, detrend_kwargs):
         """Smooth the rapid variations in the lightcurve and remove bulk trends.
 
         inputs
         ------
         alpha: float
             "bass enhancement" for supersmoother. 
-            Defaults to 8 for now because Kevin was using that. 
         """
+
+        if detrend_kwargs is None:
+            detrend_kwargs = dict()
+        detrend_kwargs["kind"] = detrend_kwargs.get("kind", "supersmoother")
+        detrend_kwargs["phaser"] = detrend_kwargs.get("phaser", None)
 
         logging.debug("Removing bulk trend...")
         det_out = detrend.simple_detrend(self.time, self.flux, self.unc_flux,
-                                         kind="supersmoother", phaser=alpha)
+                                         to_plot=True, **detrend_kwargs)
         self.det_flux, self.det_unc, self.bulk_trend = det_out
 
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
+
+        fig = plt.gcf()
+        fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
+                     detrend_kwargs["phaser"]),fontsize="x-large")
+        plt.savefig("{}_detrend.png".format(self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
@@ -292,11 +321,11 @@ class LightCurve(object):
 
             pix_sep = np.sqrt((xx - comp_x)**2 + (yy - comp_y)**2)
             min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
-            logging.debug(np.median(pix_sep[min_ind]))
+            #logging.debug(np.median(pix_sep[min_ind]))
 
             median_nearest = np.median(comp_f[min_ind])
-            logging.debug("This flux %f Median Nearest %f", 
-                          fval, median_nearest)
+            #logging.debug("This flux %f Median Nearest %f", 
+            #              fval, median_nearest)
             self.corrected_flux[i] = fval / median_nearest
             self.corrected_unc[i] = self.use_unc[i] / median_nearest
 

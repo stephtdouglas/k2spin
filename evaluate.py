@@ -60,12 +60,19 @@ def test_pgram(periods, powers, threshold, n_aliases=3,
 
     # Clip the best peak out of the periodogram
     to_clip = np.where(abs(periods - fund_period)<=fund_5percent)[0]
-    logging.debug(periods[to_clip])
+    #logging.debug(periods[to_clip])
 
     # Now clip out aliases
     for i, alias in enumerate(aliases):
         to_clip = np.union1d(to_clip, 
                              np.where(abs(periods - alias)<=fund_2percent)[0])
+
+    # Also clip aliases of the 6-hour period
+    six_hr_alias = np.append(0.125, np.arange(0.25,2.1,0.25))
+    for i, alias in enumerate(six_hr_alias):
+        to_clip = np.union1d(to_clip, 
+                             np.where(abs(periods - alias)<=fund_2percent)[0])
+
 
     clipped_periods = np.delete(periods, to_clip)
     clipped_powers = np.delete(powers, to_clip)

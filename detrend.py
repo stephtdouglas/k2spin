@@ -4,9 +4,11 @@ import logging
 
 import numpy as np
 from scipy import interpolate
+import matplotlib.pyplot as plt
 import supersmoother
 #from astroML import time_series
 from gatspy.periodic import lomb_scargle_fast
+from astropy import convolution
 
 from k2spin import utils
 from k2spin import evaluate
@@ -24,7 +26,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     kind: string, optional
         type of smoothing to use. Defaults to "supersmoother."
-        Other types YET TO BE IMPLEMENTED are "boxcar"
+        Other types are "boxcar", "linear" 
 
     which: string, optional
         whether to smooth the "phased" lightcurve (default) or the "full" 
@@ -48,6 +50,10 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     if kind.lower()=="supersmoother":
 
+        if phaser is None:
+            logging.warning("Phaser not set! "
+                            "Set phaser=alpha (bass-enhancement value "
+                            "for supersmoother) if desired.")
 
         if which.lower()=="phased":
             # Instantiate the supersmoother model object with the input period
@@ -74,26 +80,55 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
 
     elif kind.lower()=="boxcar":
-        logging.warning("boxcar is not yet implemented.")
-        # sort the phases
 
-        # Stitch 3X the phased lightcurve together to avoid edge effects
-        # I *think* I don't have to do this, and I can just force it to wrap
+        if phaser is None:
+            logging.warning("Phaser not set! "
+                            "Set phaser to the width of the smoothing "
+                            "box in pixels!")
 
-        # loop through and construct the moving average
+        if which.lower()=="phased":
+            # sort the phases
+            sort_locs = np.argsort(phased_time)
+            x_vals = phased_time[sort_locs]
+            flux_to_fit = flux[sort_locs]
+
+        elif which.lower()=="full":
+            x_vals = time
+            flux_to_fit = flux
+        else:
+            logging.warning("unknown which %s !!!",which)
+
+        # Use astropy's convolution function!
+        boxcar_kernel = convolution.Box1DKernel(width=phaser,
+                                                mode="linear_interp")
+        y_fit = convolution.convolve(flux_to_fit, boxcar_kernel,
+                                     boundary="wrap")
+
+    elif kind=="linear":
+
+         if which!="full":
+             logging.warning("Linear smoothing only allowed for full "
+                             "lightcurve! Switching to full mode.")
+             which = "full"
+
+         # Fit a line to the data
+         pars = np.polyfit(time, flux, deg=1)
+         m, b = pars
+         smoothed_flux = m * time + b
 
     else:
         logging.warning("unknown kind %s !!!",kind)
 
-    # Interpolate back onto the original time array
-    interp_func = interpolate.interp1d(x_vals, y_fit)
+    if (kind=="supersmoother") or (kind=="boxcar"):
+        # Interpolate back onto the original time array
+        interp_func = interpolate.interp1d(x_vals, y_fit)
 
-    if which.lower()=="phased":
-        smoothed_flux = interp_func(phased_time)
-    elif which.lower()=="full":
-        smoothed_flux = interp_func(time)
-    else:
-        logging.warning("unknown which %s !!!",which)
+        if which.lower()=="phased":
+            smoothed_flux = interp_func(phased_time)
+        elif which.lower()=="full":
+            smoothed_flux = interp_func(time)
+        else:
+            logging.warning("unknown which %s !!!",which)
 
     # Whiten the input flux by subtracting the smoothed version
     # The smoothed flux represents the "bulk trend"
@@ -102,8 +137,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     return white_flux, white_unc, smoothed_flux
 
-def simple_detrend(time, flux, unc_flux, kind="supersmoother",
-                   phaser=None):
+def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
     """Remove bulk trends from the LC
 
     Inputs
@@ -132,14 +166,32 @@ def simple_detrend(time, flux, unc_flux, kind="supersmoother",
     # Maybe I should do something here to set alpha/the window size
     # for supersmoother
     w_flux, w_unc, bulk_trend = pre_whiten(time, flux, unc_flux, 
-                                           period=None, kind=kind, 
-                                           which="full",  
-                                           phaser=phaser)
+                                           period=None, which="full",  
+                                           **detrend_kwargs)
 
     # Actually detrend
     detrended_flux = flux / bulk_trend
 
     detrended_unc = unc_flux
+
+    if to_plot:
+        plt.figure(figsize=(10,8))
+        ax1 = plt.subplot(311)
+        ax1.plot(time, flux, 'k.')
+        ax1.plot(time, bulk_trend, 'b-',lw=3)
+        ax1.set_ylabel("Counts",fontsize="large")
+        ax1.tick_params(labelleft=False, labelright=True)
+
+        ax2 = plt.subplot(312)
+        ax2.plot(time, w_flux, 'g.')
+        ax2.set_ylabel("Flux - Bulk Trend",fontsize="large")
+        ax2.tick_params(labelleft=False, labelright=True)
+
+        ax3 = plt.subplot(313)
+        ax3.plot(time, detrended_flux, 'r.')
+        ax3.set_xlabel("Time (d)")
+        ax3.set_ylabel("Flux / Bulk Trend",fontsize="large")
+        ax3.tick_params(labelleft=False, labelright=True)
 
     # Return detrended
     return detrended_flux, detrended_unc, bulk_trend 
