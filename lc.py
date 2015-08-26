@@ -77,7 +77,8 @@ class LightCurve(object):
         logging.debug("Ran detrended fit")
 
         # Only consider peaks less than ~half the length of the lightcurve
-        max_peak_loc = 0.75 * (self.time[-1] - self.time[0])
+#        max_peak_loc = 0.75 * (self.time[-1] - self.time[0])
+        max_peak_loc = 40
         logging.info("Max Prot = %f", max_peak_loc)
 
         raw_loc2 = np.argmax(raw_pgram[raw_prots<max_peak_loc])
