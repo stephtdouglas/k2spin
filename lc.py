@@ -76,11 +76,26 @@ class LightCurve(object):
         det_fp, det_power, det_prots, det_pgram, det_alias, det_sigma = d_out
         logging.debug("Ran detrended fit")
 
+        # Only consider peaks less than ~half the length of the lightcurve
+#        max_peak_loc = 0.75 * (self.time[-1] - self.time[0])
+        max_peak_loc = 40
+        logging.info("Max Prot = %f", max_peak_loc)
+
+        raw_loc2 = np.argmax(raw_pgram[raw_prots<max_peak_loc])
+        raw_power2 = raw_pgram[raw_prots<max_peak_loc][raw_loc2]
+        raw_prot2 = raw_prots[raw_prots<max_peak_loc][raw_loc2]
+        logging.info("raw %d FP %f Power %f", raw_loc2, raw_prot2, raw_power2)
+
+        det_loc2 = np.argmax(det_pgram[det_prots<max_peak_loc])
+        det_power2 = det_pgram[det_prots<max_peak_loc][det_loc2]
+        det_prot2 = det_prots[det_prots<max_peak_loc][det_loc2]
+        logging.info("det %d FP %f Power %f", det_loc2, det_prot2, det_power2)
+
         # Compare them
-        lc_to_use = self._pick_lc(raw_power, det_power)
+        lc_to_use = self._pick_lc(raw_power2, det_power2)
         if lc_to_use<=1:
             logging.info("Using raw lightcurve")
-            self.init_prot , self.init_power = raw_fp, raw_power
+            self.init_prot , self.init_power = raw_prot2, raw_power2
             self.init_periods_to_test, self.init_pgram = raw_prots, raw_pgram
             self.use_flux = self.flux / self.med
             self.use_unc = self.unc_flux / self.med
@@ -88,7 +103,7 @@ class LightCurve(object):
             data_labels = ["Raw (Selected)", "Detrended"]
         elif lc_to_use==2:
             logging.info("Using detrended lightcurve")
-            self.init_prot , self.init_power = det_fp, det_power
+            self.init_prot , self.init_power = det_prot2, det_power2
             self.init_periods_to_test, self.init_pgram = det_prots, det_pgram
             self.use_flux = self.det_flux 
             self.use_unc = self.unc_flux 
@@ -111,7 +126,7 @@ class LightCurve(object):
         lcs = [[self.time, self.flux/self.med, abs(self.unc_flux/self.med)],
                [self.time, self.det_flux, self.det_unc]]
         pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
-        best_periods = [raw_fp, det_fp]
+        best_periods = [raw_prot2, det_prot2]
         sigmas = [raw_sigma, det_sigma]
         logging.debug(sigmas)
         rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
@@ -192,8 +207,8 @@ class LightCurve(object):
         rd_axes[3].set_xlim(0, fund_prot)
 
         plt.savefig("{}_corrected.png".format(self.name))
-#        plt.show()
-        plt.close("all")
+        plt.show()
+#        plt.close("all")
 
 
 
