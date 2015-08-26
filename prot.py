@@ -201,7 +201,7 @@ def detrend_for_correction(time, flux, unc_flux, prot_lims,
 
         if to_plot:
             pp.savefig()
-            #plt.close()
+            plt.close()
 
         # Stop iterating if we've gotten to a small multiple of the 
         # 6-hour period
@@ -217,7 +217,8 @@ def detrend_for_correction(time, flux, unc_flux, prot_lims,
         else:
             logging.warning("prot {0:.3f} power {1:.3f} fund_div {2:.3f} {3}".format(fund_period, fund_power, fund_div, fd_round))
 
-    pp.close()
+    if to_plot:
+        pp.close()
 
 
     # Return the newly detrended lightcurve and the bulk trend

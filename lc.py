@@ -145,7 +145,10 @@ class LightCurve(object):
         """Position-correct and perform a fit."""
         logging.debug("Fitting corrected lightcurve")
 
-        self._xy_correct()
+        cl_flux, cl_unc = self._clean_it([self.time, self.use_flux,
+                                                   self.use_unc])
+
+        self._xy_correct(correct_with=cl_flux)
 
         fit_out = self._run_fit([self.time, self.corrected_flux,
                                  self.corrected_unc])
@@ -254,20 +257,8 @@ class LightCurve(object):
             logging.debug("fitting other lc")
             tt, ff, uu = use_lc
 
-        logging.debug("_run_fit threshold %f", self.power_threshold)
-
-        # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        pc_out = prot.period_cleaner(tt, ff, uu, 
-                                     pgram_threshold=self.power_threshold, 
-                                     prot_lims=prot_lims)
-        cl_time, cl_flux, cl_unc, sm_flux = pc_out
-
-        logging.debug("Smoothed, now periodogram")
-        logging.debug("Cleaned t %d f %d u %d", len(cl_time),
-                      len(cl_flux), len(cl_unc))
         # Test the periodogram and pick the best period and power
-        ls_out = prot.run_ls(cl_time, cl_flux, cl_unc, 
-                             threshold=self.power_threshold,
+        ls_out = prot.run_ls(tt, ff, uu, threshold=self.power_threshold,
                              prot_lims=prot_lims, run_bootstrap=True)
         #fund_prot, fund_power, periods_to_test, periodogram, aliases, sigmas
 
@@ -289,6 +280,29 @@ class LightCurve(object):
             to_use = 0
 
         return to_use
+
+    def _clean_it(self, use_lc, prot_lims=[0.1,70]):
+        """Clean all periodic signals from the lightcurve."""
+        if use_lc=="raw":
+            logging.debug("fitting raw lc")
+            tt, ff, uu = self.time, self.flux, self.unc_flux
+        elif use_lc=="detrended":
+            logging.debug("fitting detrended lc")
+            tt, ff, uu = self.time, self.det_flux, self.det_unc
+        else:
+            logging.debug("fitting other lc")
+            tt, ff, uu = use_lc
+
+        logging.debug("_run_fit threshold %f", self.power_threshold)
+
+        # Iteratively smooth, clip, and run a periodogram (period_cleaner)
+        pc_out = prot.detrend_for_correction(tt, ff, uu,
+                                             prot_lims=prot_lims,
+                                             to_plot=True, 
+                                             filename=self.name+"_detrending")
+        cl_flux, cl_unc = pc_out
+
+        return cl_flux, cl_unc
 
     def _xy_correct(self, correct_with=None, n_closest=21):
         """Correct for positional variations in the lightcurve once selected."""
