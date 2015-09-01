@@ -155,7 +155,7 @@ def search_and_detrend(time, flux, unc_flux, prot_lims=None,
     return detrended_flux, detrended_unc, fund_period, fund_power
 
 def detrend_for_correction(time, flux, unc_flux, prot_lims,
-                           to_plot=False, **detrend_kwargs):
+                           to_plot=False, detrend_kwargs=None):
     """Test for a period and then pre-whiten with it.
 
     Inputs

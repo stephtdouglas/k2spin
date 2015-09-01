@@ -100,6 +100,7 @@ class LightCurve(object):
             self.use_flux = self.flux / self.med
             self.use_unc = self.unc_flux / self.med
             self.init_sigmas = raw_sigma
+            self.use = "raw"
             data_labels = ["Raw (Selected)", "Detrended"]
         elif lc_to_use==2:
             logging.info("Using detrended lightcurve")
@@ -108,6 +109,7 @@ class LightCurve(object):
             self.use_flux = self.det_flux 
             self.use_unc = self.unc_flux 
             self.init_sigmas = det_sigma
+            self.use = "det"
             data_labels = ["Raw", "Detrended (Selected)"]
 
         logging.info("Initial Prot %f Power %f", self.init_prot, 
@@ -139,14 +141,13 @@ class LightCurve(object):
 
         rd_fig.delaxes(rd_axes[3])
 
-        plt.savefig("{}_raw_detrend.png".format(self.name))
+        plt.savefig("plot_outputs/{}_raw_detrend.png".format(self.name))
 
     def correct_and_fit(self):
         """Position-correct and perform a fit."""
         logging.debug("Fitting corrected lightcurve")
 
-        cl_flux, cl_unc = self._clean_it([self.time, self.use_flux,
-                                                   self.use_unc])
+        cl_flux, cl_unc = self._clean_it(self.use)
 
         self._xy_correct(correct_with=cl_flux)
 
@@ -158,7 +159,9 @@ class LightCurve(object):
         eval_out =  evaluate.test_pgram(periods_to_test, periodogram, 
                                         self.power_threshold)
 
-        self.corrected_prot = fund_prot
+        self.corr_prot = fund_prot
+        self.corr_power = fund_power
+        self.corr_sigmas = sigmas
 
         if eval_out[-1]==False:
             logging.warning("Corrected lightcurve is not clean")
@@ -184,7 +187,7 @@ class LightCurve(object):
 
         ptime, fsine = evaluate.fit_sine(self.time, self.corrected_flux,
                                          self.corrected_unc, 
-                                         self.corrected_prot)
+                                         self.corr_prot)
 
         plotx = np.argsort(ptime)
         rd_axes[2].plot(ptime[plotx], fsine[plotx], color="lightgrey", lw=2)
@@ -209,9 +212,9 @@ class LightCurve(object):
                             mec=plot.color2)
         rd_axes[3].set_xlim(0, fund_prot)
 
-        plt.savefig("{}_corrected.png".format(self.name))
-        plt.show()
-#        plt.close("all")
+        plt.savefig("plot_outputs/{}_corrected.png".format(self.name))
+#        plt.show()
+        plt.close("all")
 
 
 
@@ -240,7 +243,7 @@ class LightCurve(object):
         fig = plt.gcf()
         fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
                      detrend_kwargs["phaser"]),fontsize="x-large")
-        plt.savefig("{}_detrend.png".format(self.name))
+        plt.savefig("plot_outputs/{}_detrend.png".format(self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
@@ -250,7 +253,7 @@ class LightCurve(object):
         if use_lc=="raw":
             logging.debug("fitting raw lc")
             tt, ff, uu = self.time, self.flux, self.unc_flux
-        elif use_lc=="detrended":
+        elif (use_lc=="detrended") or (use_lc=="det"):
             logging.debug("fitting detrended lc")
             tt, ff, uu = self.time, self.det_flux, self.det_unc
         else:
@@ -286,7 +289,7 @@ class LightCurve(object):
         if use_lc=="raw":
             logging.debug("fitting raw lc")
             tt, ff, uu = self.time, self.flux, self.unc_flux
-        elif use_lc=="detrended":
+        elif (use_lc=="detrended") or (use_lc=="det"):
             logging.debug("fitting detrended lc")
             tt, ff, uu = self.time, self.det_flux, self.det_unc
         else:
@@ -296,10 +299,11 @@ class LightCurve(object):
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
+        dk = {"filename":"plot_outputs/{}_cleaning".format(self.name)}
         pc_out = prot.detrend_for_correction(tt, ff, uu,
                                              prot_lims=prot_lims,
                                              to_plot=True, 
-                                             filename=self.name+"_detrending")
+                                             detrend_kwargs=dk)
         cl_flux, cl_unc = pc_out
 
         return cl_flux, cl_unc
