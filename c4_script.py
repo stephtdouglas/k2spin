@@ -145,8 +145,8 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/", ap=None,
         lc_out.close()
 
     # Write out periodograms
-    pg_out = open("output_lcs/{}_pgram.csv".format(
-                      light_curve.name),"w")
+        pg_out = open("output_lcs/{}_pgram.csv".format(
+            light_curve.name),"w")
         # Write out any relevant arguments and the date
         pg_out.write("# Generated on {0}".format(today))
         pg_out.write("\n# Best aperture: {0}".format(best_col))
