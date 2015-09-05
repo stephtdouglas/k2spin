@@ -21,7 +21,7 @@ class LightCurve(object):
     """
 
     def __init__(self, time, flux, unc_flux, x_pos, y_pos, name, 
-                 power_threshold=0.5, detrend_kwargs=None):
+                 power_threshold=0.5, detrend_kwargs=None, to_plot=True):
         """Clean up the input data and sigma-clip it.
 
         input
@@ -59,9 +59,9 @@ class LightCurve(object):
                       len(self.flux),len(self.unc_flux))
 
         # Detrend the raw flux
-        self._bulk_detrend(detrend_kwargs)
+        self._bulk_detrend(detrend_kwargs, to_plot)
 
-    def choose_initial(self):
+    def choose_initial(self, to_plot=True):
         """Search raw and detrended LCs for periods, and decide whether there's
         a period there.
 
@@ -124,26 +124,28 @@ class LightCurve(object):
             logging.debug("Selected lightcurve is clean")
         plot_aliases = [None, eval_out[2]]
 
-        # Plot them up
-        lcs = [[self.time, self.flux/self.med, abs(self.unc_flux/self.med)],
-               [self.time, self.det_flux, self.det_unc]]
-        pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
-        best_periods = [raw_prot2, det_prot2]
-        sigmas = [raw_sigma, det_sigma]
-        logging.debug(sigmas)
-        rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
-                                                sigmas, 
-                                                aliases=plot_aliases,
-                                                data_labels=data_labels,  
-                                                phase_by=self.init_prot)
+        if to_plot:
+            # Plot them up
+            lcs = [[self.time, self.flux/self.med, abs(self.unc_flux/self.med)],
+                   [self.time, self.det_flux, self.det_unc]]
+            pgrams = [[raw_prots, raw_pgram], [det_prots, det_pgram]]
+            best_periods = [raw_prot2, det_prot2]
+            sigmas = [raw_sigma, det_sigma]
+            logging.debug(sigmas)
+            rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
+                                                    sigmas, 
+                                                    aliases=plot_aliases,
+                                                    data_labels=data_labels,  
+                                                    phase_by=self.init_prot)
 
-        rd_fig.suptitle(self.name, fontsize="large", y=0.99)
+            rd_fig.suptitle(self.name, fontsize="large", y=0.99)
 
-        rd_fig.delaxes(rd_axes[3])
+            rd_fig.delaxes(rd_axes[3])
 
-        plt.savefig("plot_outputs/{}_raw_detrend.png".format(self.name))
+            plt.savefig("plot_outputs/{}_raw_detrend.png".format(self.name))
+            plt.close("all")
 
-    def correct_and_fit(self):
+    def correct_and_fit(self, to_plot=True):
         """Position-correct and perform a fit."""
         logging.debug("Fitting corrected lightcurve")
 
@@ -162,6 +164,8 @@ class LightCurve(object):
         self.corr_prot = fund_prot
         self.corr_power = fund_power
         self.corr_sigmas = sigmas
+        self.corr_periods = periods_to_test
+        self.corr_pgram = periodogram
 
         if eval_out[-1]==False:
             logging.warning("Corrected lightcurve is not clean")
@@ -169,56 +173,57 @@ class LightCurve(object):
             logging.debug("Corrected lightcurve is clean")
         plot_aliases = [None, eval_out[2]]
 
-        # Plot them up
-        lcs = [[self.time, self.use_flux, self.use_unc],
-               [self.time, self.corrected_flux, self.corrected_unc]]
-        pgrams = [[self.init_periods_to_test, self.init_pgram], 
-                  [periods_to_test, periodogram]]
-        best_periods = [self.init_prot, fund_prot]
-        data_labels = ["Initial", "Corrected"]
-        sigmas = [self.init_sigmas, sigmas]
-        rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
-                                                sigmas, 
-                                                aliases=plot_aliases,
-                                                data_labels=data_labels,  
-                                                phase_by=fund_prot)
+        if to_plot:
+            # Plot them up
+            lcs = [[self.time, self.use_flux, self.use_unc],
+                   [self.time, self.corrected_flux, self.corrected_unc]]
+            pgrams = [[self.init_periods_to_test, self.init_pgram], 
+                      [periods_to_test, periodogram]]
+            best_periods = [self.init_prot, fund_prot]
+            data_labels = ["Initial", "Corrected"]
+            sigmas = [self.init_sigmas, sigmas]
+            rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
+                                                    sigmas, 
+                                                    aliases=plot_aliases,
+                                                    data_labels=data_labels,  
+                                                    phase_by=fund_prot)
 
-        rd_fig.suptitle(self.name, fontsize="large", y=0.99)
+            rd_fig.suptitle(self.name, fontsize="large", y=0.99)
 
-        ptime, fsine = evaluate.fit_sine(self.time, self.corrected_flux,
-                                         self.corrected_unc, 
-                                         self.corr_prot)
+            ptime, fsine = evaluate.fit_sine(self.time, self.corrected_flux,
+                                             self.corrected_unc, 
+                                             self.corr_prot)
 
-        plotx = np.argsort(ptime)
-        rd_axes[2].plot(ptime[plotx], fsine[plotx], color="lightgrey", lw=2)
-        rd_axes[2].set_ylim(min(fsine)*0.9, max(fsine)*1.1)
+            plotx = np.argsort(ptime)
+            rd_axes[2].plot(ptime[plotx], fsine[plotx], color="lightgrey", lw=2)
+            rd_axes[2].set_ylim(min(fsine)*0.9, max(fsine)*1.1)
         
-        use_residuals = self.use_flux - fsine
-        cor_residuals = self.corrected_flux - fsine
+            use_residuals = self.use_flux - fsine
+            cor_residuals = self.corrected_flux - fsine
 
-        logging.debug("RESIDUALS")
-        logging.debug(use_residuals[:10])
-        logging.debug(cor_residuals[:10])
+            logging.debug("RESIDUALS")
+            logging.debug(use_residuals[:10])
+            logging.debug(cor_residuals[:10])
 
-        rd_axes[3].errorbar(self.time % fund_prot, use_residuals, 
-                            np.zeros_like(self.time), #self.use_unc,
-                            fmt=plot.shape1, ms=2, capsize=0, 
-                            ecolor=plot.color1, color=plot.color1,
-                            mec=plot.color1)
-        rd_axes[3].errorbar(self.time % fund_prot, cor_residuals, 
-                            np.zeros_like(self.time), #self.corrected_unc,
-                            fmt=plot.shape2, ms=2, capsize=0, 
-                            ecolor=plot.color2, color=plot.color2,  
-                            mec=plot.color2)
-        rd_axes[3].set_xlim(0, fund_prot)
+            rd_axes[3].errorbar(self.time % fund_prot, use_residuals, 
+                                np.zeros_like(self.time), #self.use_unc,
+                                fmt=plot.shape1, ms=2, capsize=0, 
+                                ecolor=plot.color1, color=plot.color1,
+                                mec=plot.color1)
+            rd_axes[3].errorbar(self.time % fund_prot, cor_residuals, 
+                                np.zeros_like(self.time), #self.corrected_unc,
+                                fmt=plot.shape2, ms=2, capsize=0, 
+                                ecolor=plot.color2, color=plot.color2,  
+                                mec=plot.color2)
+            rd_axes[3].set_xlim(0, fund_prot)
 
-        plt.savefig("plot_outputs/{}_corrected.png".format(self.name))
-#        plt.show()
-        plt.close("all")
+            plt.savefig("plot_outputs/{}_corrected.png".format(self.name))
+#            plt.show()
+            plt.close("all")
 
 
 
-    def _bulk_detrend(self, detrend_kwargs):
+    def _bulk_detrend(self, detrend_kwargs, to_plot=True):
         """Smooth the rapid variations in the lightcurve and remove bulk trends.
 
         inputs
@@ -234,16 +239,16 @@ class LightCurve(object):
 
         logging.debug("Removing bulk trend...")
         det_out = detrend.simple_detrend(self.time, self.flux, self.unc_flux,
-                                         to_plot=True, **detrend_kwargs)
+                                         to_plot=to_plot, **detrend_kwargs)
         self.det_flux, self.det_unc, self.bulk_trend = det_out
 
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
-
-        fig = plt.gcf()
-        fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
-                     detrend_kwargs["phaser"]),fontsize="x-large")
-        plt.savefig("plot_outputs/{}_detrend.png".format(self.name))
+        if to_plot:
+            fig = plt.gcf()
+            fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
+                         detrend_kwargs["phaser"]),fontsize="x-large")
+            plt.savefig("plot_outputs/{}_detrend.png".format(self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
@@ -360,8 +365,53 @@ class LightCurve(object):
         """
         pass
 
-    def _multi_search(self,lc_type):
+    def multi_search(self, to_plot=True):
         """Search a lightcurve for a secondary signal."""
-        pass
+        # Start with the corrected lightcurve and its associated period
+        # Phase on that period and remove it
+        white_out = detrend.pre_whiten(self.time, self.corrected_flux, 
+                                       self.corrected_unc, self.corr_prot,
+                                       which="phased")
+        detrended_flux = self.corrected_flux / white_out[2]
 
-    
+        self.sec_flux = detrended_flux
+        self.sec_unc = self.corrected_unc
+
+        # Run lomb-scargle again and re-measure the period
+        fit_out = self._run_fit([self.time, self.sec_flux, self.sec_unc])
+        self.sec_prot = fit_out[0]
+        self.sec_power = fit_out[1]
+        self.sec_periods = fit_out[2]
+        self.sec_pgram = fit_out[3]
+        self.sec_sigmas = fit_out[5]
+
+        eval_out =  evaluate.test_pgram(self.sec_periods, self.sec_pgram,
+                                        self.power_threshold)
+        plot_aliases = [None, eval_out[2]]
+
+        # Plot!
+
+        if to_plot:
+            # Plot them up
+            lcs = [[self.time, self.corrected_flux, self.corrected_unc],
+                   [self.time, self.sec_flux, self.sec_unc]]
+            pgrams = [[self.corr_periods, self.corr_pgram], 
+                      [self.sec_periods, self.sec_pgram]]
+            best_periods = [self.corr_prot, self.sec_prot]
+            data_labels = ["Corrected", "Fund. Prot="
+                           "{0:.2f}d Removed".format(self.corr_prot)]
+            sigmas = [self.corr_sigmas, self.sec_sigmas]
+            rd_fig, rd_axes = plot.compare_multiple(lcs, pgrams, best_periods, 
+                                                    sigmas, 
+                                                    aliases=plot_aliases,
+                                                    data_labels=data_labels,  
+                                                    phase_by=self.sec_prot)
+
+            rd_fig.suptitle(self.name, fontsize="large", y=0.99)
+
+            rd_fig.delaxes(rd_axes[3])
+
+            rd_axes[0].plot(self.time, white_out[2], 'b-', lw=2)
+
+            plt.savefig("plot_outputs/{}_second_period.png".format(self.name))
+        

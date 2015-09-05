@@ -193,6 +193,11 @@ def compare_multiple(lightcurves, periodograms, best_periods, thresholds,
                             data_label=data_labels[1], phase_by=phase_by,
                             axes_list=ax_list)
 
+    minf = min(min(lightcurves[0][1]), min(lightcurves[1][1]))
+    maxf = max(max(lightcurves[0][1]), max(lightcurves[1][1]))
+
+    ax_list[2].set_ylim(minf,maxf)
+
     leg = ax_list[0].legend(loc=3, ncol=2, mode="expand", numpoints=3, 
                             bbox_to_anchor=(0., 1.02, 1., .102))
     ltexts = leg.get_texts()
