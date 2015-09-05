@@ -126,14 +126,14 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/", ap=None,
                       light_curve.name),"w")
         # Write out any relevant arguments and the date
         lc_out.write("# Generated on {0}".format(today))
-        lc_out.write("# Best aperture: {0}".format(best_col))
-        lc_out.write("# Detrend Kwargs: ")
+        lc_out.write("\n# Best aperture: {0}".format(best_col))
+        lc_out.write("\n# Detrend Kwargs: ")
         if detrend_kwargs is not None:
             for k in detrend_kwargs.keys():
                 lc_out.write("{0} = {1} ".format(k, detrend_kwargs[k]))
 
         # Now write out the LCs
-        lc_out.write("t,raw,det,corr,sec")
+        lc_out.write("\nt,raw,det,corr,sec")
         for tt,rr,dd,cc,ss in itertools.izip(light_curve.time,
                                             light_curve.flux,
                                             light_curve.det_flux,
@@ -149,14 +149,14 @@ def run_one(filename,lc_dir="/home/stephanie/code/python/k2spin/lcs/", ap=None,
                       light_curve.name),"w")
         # Write out any relevant arguments and the date
         pg_out.write("# Generated on {0}".format(today))
-        pg_out.write("# Best aperture: {0}".format(best_col))
-        pg_out.write("# Detrend Kwargs: ")
+        pg_out.write("\n# Best aperture: {0}".format(best_col))
+        pg_out.write("\n# Detrend Kwargs: ")
         if detrend_kwargs is not None:
             for k in detrend_kwargs.keys():
                 pg_out.write("{0} = {1} ".format(k, detrend_kwargs[k]))
 
         # Now write out the LCs
-        pg_out.write("{0}_period,{0}_power".format(light_curve.use))
+        pg_out.write("\n{0}_period,{0}_power".format(light_curve.use))
         pg_out.write(",corr_period,corr_power,sec_period,sec_power")
         use_periods = light_curve.init_periods_to_test
         use_len = len(use_periods)
