@@ -21,7 +21,7 @@ def std_ratio(y, cadence):
     six_hr_std = np.zeros_like(y_use)
     for i in range(6,len(y_use)-6):
         six_hr_std[i] = np.std(y_use[i-6:i+6])
-    logging.debug("std y %f 6hr %f",np.std(y_use), np.median(six_hr_std))
+    #logging.debug("std y %f 6hr %f",np.std(y_use), np.median(six_hr_std))
     
     return np.std(y_use)/np.median(six_hr_std)
 
@@ -63,7 +63,7 @@ def choose_lc(lcs, filename, detrend_kwargs=None):
 
     max_power = np.argmax(powers)
     best_col = ap_cols[max_power]
-    logging.info("Using %s", best_col)
+    logging.warning("Using %s", best_col)
     return best_col, light_curves[max_power]
 
 def run_one(filename,lc_dir, ap=None,

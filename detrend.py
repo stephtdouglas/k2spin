@@ -51,9 +51,9 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
     if kind.lower()=="supersmoother":
 
         if phaser is None:
-            logging.warning("Phaser not set! "
-                            "Set phaser=alpha (bass-enhancement value "
-                            "for supersmoother) if desired.")
+            logging.info("Phaser not set! "
+                         "Set phaser=alpha (bass-enhancement value "
+                         "for supersmoother) if desired.")
 
         if which.lower()=="phased":
             # Instantiate the supersmoother model object with the input period
@@ -82,9 +82,9 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
     elif kind.lower()=="boxcar":
 
         if phaser is None:
-            logging.warning("Phaser not set! "
-                            "Set phaser to the width of the smoothing "
-                            "box in pixels!")
+            logging.info("Phaser not set! "
+                         "Set phaser to the width of the smoothing "
+                         "box in pixels!")
 
         if which.lower()=="phased":
             # sort the phases

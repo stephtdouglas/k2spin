@@ -40,7 +40,7 @@ def test_pgram(periods, powers, threshold, n_aliases=3,
     fund_period = periods[fund_loc]
     fund_power = powers[fund_loc]
 
-    logging.info("Fundamental %d Prot=%f Power=%f", fund_loc, fund_period,
+    logging.debug("Fundamental %d Prot=%f Power=%f", fund_loc, fund_period,
                   fund_power)
 
     # and aliases
@@ -52,7 +52,7 @@ def test_pgram(periods, powers, threshold, n_aliases=3,
     aliases = np.append(pos_aliases, neg_aliases)
     tot_aliases = len(aliases)
 
-    logging.debug("Aliases: {}".format(aliases))
+#    logging.debug("Aliases: {}".format(aliases))
 
     # percentages to use for finding values to clip
     fund_5percent = fund_period * 0.05
@@ -88,7 +88,7 @@ def test_pgram(periods, powers, threshold, n_aliases=3,
         is_clean = True
     else:
         is_clean = False
-        logging.info("Max clipped power = %f", max_clip_power)
+        logging.debug("Max clipped power = %f", max_clip_power)
 
     # Return best_period, best_power, aliases, is_clean
     return fund_period, fund_power, aliases, is_clean
