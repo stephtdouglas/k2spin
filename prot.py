@@ -11,6 +11,7 @@ import supersmoother
 from astroML import time_series
 from gatspy.periodic import lomb_scargle_fast
 
+from k2spin.config import *
 from k2spin import utils
 from k2spin import clean
 from k2spin import evaluate
@@ -176,7 +177,8 @@ def detrend_for_correction(time, flux, unc_flux, prot_lims,
 
     # Set up the plot
     if to_plot==True:
-        filename = detrend_kwargs.get("filename","unknown_detrending.pdf")
+        filename = detrend_kwargs.get("filename",
+                                      base_path+"unknown_detrending.pdf")
         junk = detrend_kwargs.pop("filename")
         if filename.endswith(".pdf")==False:
             filename = filename+".pdf"

@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astroML import time_series
 
+from k2spin.config import *
 from k2spin import utils
 from k2spin import clean
 from k2spin import detrend
@@ -142,7 +143,8 @@ class LightCurve(object):
 
             rd_fig.delaxes(rd_axes[3])
 
-            plt.savefig("plot_outputs/{}_raw_detrend.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_raw_detrend.png".format(base_path,
+                                                                     self.name))
             plt.close("all")
 
     def correct_and_fit(self, to_plot=True):
@@ -217,7 +219,8 @@ class LightCurve(object):
                                 mec=plot.color2)
             rd_axes[3].set_xlim(0, fund_prot)
 
-            plt.savefig("plot_outputs/{}_corrected.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_corrected.png".format(base_path, 
+                                                                   self.name))
 #            plt.show()
             plt.close("all")
 
@@ -248,7 +251,8 @@ class LightCurve(object):
             fig = plt.gcf()
             fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
                          detrend_kwargs["phaser"]),fontsize="x-large")
-            plt.savefig("plot_outputs/{}_detrend.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_detrend.png".format(base_path,
+                                                                 self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
@@ -304,7 +308,8 @@ class LightCurve(object):
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        dk = {"filename":"plot_outputs/{}_cleaning".format(self.name)}
+        dk = {"filename":"{0}plot_outputs/{1}_cleaning".format(base_path, 
+                                                               self.name)}
         pc_out = prot.detrend_for_correction(tt, ff, uu,
                                              prot_lims=prot_lims,
                                              to_plot=True, 
@@ -413,5 +418,6 @@ class LightCurve(object):
 
             rd_axes[0].plot(self.time, white_out[2], 'b-', lw=2)
 
-            plt.savefig("plot_outputs/{}_second_period.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_second_period.png".format(
+                        base_path,self.name))
         
