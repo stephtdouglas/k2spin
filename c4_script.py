@@ -135,12 +135,14 @@ def run_one(filename,lc_dir, ap=None,
 
         # Now write out the LCs
         lc_out.write("\nt,raw,det,corr,sec")
-        for tt,rr,dd,cc,ss in itertools.izip(light_curve.time,
+        for tt,rr,bb,dd,cc,ss in itertools.izip(light_curve.time,
                                             light_curve.flux,
+                                            light_curve.bulk_trend,
                                             light_curve.det_flux,
                                             light_curve.corrected_flux,
                                             light_curve.sec_flux):
             lc_out.write("\n{0:.6f},{1:.3f}".format(tt,rr))
+            lc_out.write(",{0:.6f}".format(bb))
             lc_out.write(",{0:.6f},{1:.6f}".format(dd,cc))
             lc_out.write(",{0:.6f}".format(ss))
         lc_out.close()

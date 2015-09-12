@@ -144,21 +144,21 @@ def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
     ------
     time, flux, unc_flux: array_like
 
-    kind: string, optional
-        type of smoothing to use. Defaults to "supersmoother."
-        Other types YET TO BE IMPLEMENTED are "boxcar"
+    to_plot: boolean, default=False
+        whether to plot the results of the detrending. 
+        Does not show or save the plot.
 
-    which: string, optional
-        whether to smooth the "phased" lightcurve (default) or the "full" 
-        lightcurve. 
+    detrend_kwargs:
+        phaser: Float, optional (default=None)
+            if kind="boxcar", phaser is the Half-width of the smoothing window.
+            if kind="supersmoother", phaser is alpha (the "bass enhancement").
 
-    phaser: Float, optional (default=None)
-        if kind="boxcar", phaser is the Half-width of the smoothing window.
-        if kind="supersmoother", phaser is alpha (the "bass enhancement").
+        kind: string, optional
+            "supersmoother" or "linear" or "boxcar"
 
     Outputs
     -------
-    detrended_flux, detrended_unc: arrays
+    detrended_flux, detrended_unc, bulk_trend: arrays
 
     """
 
