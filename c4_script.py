@@ -5,25 +5,16 @@ from datetime import date
 import numpy as np
 import astropy.io.ascii as at
 import matplotlib.pyplot as plt
+from astroML import time_series
 
 from k2spin.config import *
 from k2spin import lc
 from k2spin import k2io
 from k2spin import plot
+import hypra.prot.fix_kepler
+import hypra.prot.time_series
 
 today = date.today().isoformat()
-
-def std_ratio(y, cadence):
-
-    y_use = y[np.isfinite(y)]
-    six_hr = 0.25 / cadence
-
-    six_hr_std = np.zeros_like(y_use)
-    for i in range(6,len(y_use)-6):
-        six_hr_std[i] = np.std(y_use[i-6:i+6])
-    #logging.debug("std y %f 6hr %f",np.std(y_use), np.median(six_hr_std))
-    
-    return np.std(y_use)/np.median(six_hr_std)
 
 def choose_lc(lcs, filename, detrend_kwargs=None):
 
@@ -77,7 +68,7 @@ def run_one(filename,lc_dir, ap=None,
     qual_flux = np.zeros_like(time)
     unc_flux = np.ones_like(time)
 
-    if ap is None:
+    if (ap is None) or (ap<1):
         best_col, light_curve = choose_lc(lcs, filename, detrend_kwargs)
         flux = lcs[best_col]
     else:
@@ -110,11 +101,15 @@ def run_one(filename,lc_dir, ap=None,
                                                  light_curve.init_power))
         s1, s2 = light_curve.init_sigmas
         output_f.write(",{0:.4f},{1:.4f}".format(s1, s2))
+        output_f.write(",{0:.4f},{1:.4f},{2:.4f},{3:.4f}".format(
+                       *light_curve.init_harmonics[:]))
         # Corrected lightcurve result
         output_f.write(",{0:.4f},{1:.4f}".format(light_curve.corr_prot,
                                                  light_curve.corr_power))
         s3, s4 = light_curve.corr_sigmas
         output_f.write(",{0:.4f},{1:.4f}".format(s3,s4))
+        output_f.write(",{0:.4f},{1:.4f},{2:.4f},{3:.4f}".format(
+                       *light_curve.corr_harmonics[:]))
         # Second period search
         output_f.write(",{0:.4f},{1:.4f}".format(light_curve.sec_prot,
                                                  light_curve.sec_power))
@@ -134,7 +129,7 @@ def run_one(filename,lc_dir, ap=None,
                 lc_out.write("{0} = {1} ".format(k, detrend_kwargs[k]))
 
         # Now write out the LCs
-        lc_out.write("\nt,raw,det,corr,sec")
+        lc_out.write("\nt,raw,bulk_trend,det,corr,sec")
         for tt,rr,bb,dd,cc,ss in itertools.izip(light_curve.time,
                                             light_curve.flux,
                                             light_curve.bulk_trend,
@@ -147,8 +142,8 @@ def run_one(filename,lc_dir, ap=None,
             lc_out.write(",{0:.6f}".format(ss))
         lc_out.close()
 
-    # Write out periodograms
-    pg_out = open("{0}output_lcs/{1}_pgram.csv".format(base_path,
+        # Write out periodograms
+        pg_out = open("{0}output_lcs/{1}_pgram.csv".format(base_path,
                                                        light_curve.name),"w")
         # Write out any relevant arguments and the date
         pg_out.write("# Generated on {0}".format(today))
@@ -158,7 +153,7 @@ def run_one(filename,lc_dir, ap=None,
             for k in detrend_kwargs.keys():
                 pg_out.write("{0} = {1} ".format(k, detrend_kwargs[k]))
 
-        # Now write out the LCs
+        # Now write out the periodograms
         pg_out.write("\n{0}_period,{0}_power".format(light_curve.use))
         pg_out.write(",corr_period,corr_power,sec_period,sec_power")
         use_periods = light_curve.init_periods_to_test
@@ -186,17 +181,96 @@ def run_one(filename,lc_dir, ap=None,
                 pg_out.write(",NaN,NaN")
         pg_out.close()
 
+def acf_one(filename, lc_dir, ap=None, output_f=None):
+    lcs = at.read(lc_dir+filename)
+    epic = filename.split("/")[-1][4:13]
+    plotname = "{0}acf_plots/{1}_acf.png".format(base_path,
+                                                filename.split("/")[-1][:-4])
 
+    print lcs.dtype
+
+    time = lcs["t"]
+    unc_flux = np.ones_like(time)
+
+    #best_col = "flux_{0:.1f}".format(ap)
+    best_col = "corr"
+    flux = lcs[best_col]
+    """
+    # E-K ACF
+    C_EK, C_EK_err, bins = time_series.ACF_EK(time, flux, unc_flux, 
+                                              bins=np.linspace(0,70,400))
+    t_EK = 0.5*(bins[1:] + bins[:-1])
+
+    # Plot the results
+    fig = plt.figure(figsize=(10, 8))
+
+    # plot the input data
+    ax = fig.add_subplot(211)
+    #ax.errorbar(t, y, dy, fmt='.k', lw=1)
+    ax.plot(t, y,'k.', lw=1)
+    ax.set_xlabel('t (days)')
+    ax.set_ylabel('observed flux')
+
+    # plot the ACF
+    ax = fig.add_subplot(212)
+    #ax.errorbar(t_EK, C_EK, C_EK_err, fmt='.k', lw=1)
+    ax.plot(t_EK, C_EK, 'k.', lw=1)
+    ax.set_xlim(0, 20)
+    #ax.set_ylim(-0.003, 0.003)
+
+    ax.set_xlabel('t (days)')
+    ax.set_ylabel('E-K ACF')
+    """
+
+    # Standard ACF with gap filling
+    t, y, dy = hypra.prot.fix_kepler.fill_gaps(time,flux,unc_flux)
+    acf_out = hypra.prot.time_series.run_acf(t, y, plot=True)
+    plt.suptitle("EPIC {0}".format(epic))
+    plt.savefig(plotname)
+    plt.close("all")
+    best_period, best_height, which, periods, heights = acf_out
+
+    if output_f is not None:
+        output_f.write("\n{},{}".format(filename, epic))
+        if ap is not None:
+            output_f.write(",{:.1f}".format(ap))
+        else:
+            output_f.write(",0.0")
+
+        # E-K result
+
+        # gap-filling result
+        output_f.write(",{0:.3f},{1:.3f},{2}".format(best_period, best_height, 
+                                                     which))
+
+def acf_list(listname, lc_dir):
+    lcs = at.read(listname)
+
+    outfile = listname.split("/")[-1][:-4]+"_acf_results_{}.csv".format(today)
+    output_f = open("{0}tables/{1}".format(base_path,outfile),"w")
+    output_f.write("filename,EPIC,ap,period,height,which")
+    for i, filename in enumerate(lcs["filename"]):
+        new_filename = base_path+"output_lcs/"+filename.split("/")[-1][:-4]+"_lcs.csv"
+        logging.warning("starting %d %s",i,new_filename)
+        if os.path.exists(new_filename):
+            acf_one(new_filename, lc_dir, ap=lcs["ap"][i], output_f=output_f)
+        else: 
+            logging.warning("SKIPPING %s",new_filename)
+        logging.warning("done %d %s",i,new_filename)
+
+    output_f.close()
 
 def run_list(listname, lc_dir, detrend_kwargs=None):
     
     lcs = at.read(listname)
 
-    outfile = listname[:-4]+"_results_{}.csv".format(today)
+    outfile = listname.split("/")[-1][:-4]+"_results_{}.csv".format(today)
     output_f = open("{0}tables/{1}".format(base_path,outfile),"w")
     output_f.write("filename,EPIC,ap,lc")
     output_f.write(",init_prot,init_power,init99,init95")
+    output_f.write(",init_0.5prot, init_0.5power, init_2prot, init_2power")
     output_f.write(",corr_prot,corr_power,corr99,corr95")
+    output_f.write(",corr_0.5prot, corr_0.5power, corr_2prot, corr_2power")
     output_f.write(",sec_prot,sec_power,sec99,sec95")
 
     for i, filename in enumerate(lcs["filename"]):
@@ -211,8 +285,8 @@ def run_list(listname, lc_dir, detrend_kwargs=None):
 
 if __name__=="__main__":
 
-    logging.basicConfig(level=logging.INFO, 
-                        format="%(asctime)s - %(name) - %(message)s")
+    logging.basicConfig(level=logging.DEBUG)#, 
+#                        format="%(asctime)s - %(name) - %(message)s")
 
     # need to fix that need for replacement, probably
     lc_dir = base_path.replace("k2spin","k2phot")+"lcs/"
@@ -224,6 +298,7 @@ if __name__=="__main__":
 #            lc_dir=lc_dir, ap=ap,
 #            detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-    run_list(base_path+"c4_lcs_aps.lst", 
-             lc_dir = "",
-             detrend_kwargs={"kind":"supersmoother","phaser":10})
+#    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
+#             detrend_kwargs={"kind":"supersmoother","phaser":10})
+
+    acf_list(base_path+"c4_lcs_aps.csv", lc_dir = "")
