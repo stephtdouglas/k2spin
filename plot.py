@@ -6,7 +6,9 @@ import itertools
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import ticker
+from matplotlib import gridspec
 import numpy as np
+import astropy.io.ascii as at
 
 from k2spin import utils
 
@@ -296,3 +298,130 @@ def plot_xy(xpix, ypix, time, color_by, color_label):
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.94)
+
+def paper_lcs(epic, output_row, campaign=4):
+    """ Plot light curves and relevant periodograms for the paper."""
+
+    logging.info("plot paper lcs %s", epic)
+
+    init_lc = output_row["lc"]
+    if init_lc=="raw":
+        init_title = "Raw"
+        initi=0
+    else:
+        init_title = "Detrended"
+        initi=1
+
+    final_lc = output_row["use"]
+    if final_lc=="corr":
+        final_title = "Corrected"
+    elif final_lc=="sec":
+        final_title = "Secondary"
+    else:
+         final_title = init_title
+
+    lc_dir = "/home/stephanie/code/python/k2spin/output_lcs/"
+    lcs = at.read("{0}ktwo{1}-c0{2}_lcs.csv".format(lc_dir, epic,
+                                                    campaign))
+    pgrams = at.read("{0}ktwo{1}-c0{2}_pgram.csv".format(lc_dir, 
+                                                         epic, 
+                                                         campaign))
+
+    # portrait full-page plot (with a little room for a caption)
+    fig = plt.figure(figsize=(7.5,9))
+    split_grid = gridspec.GridSpec(3,1,height_ratios=[4,1,2])
+
+    # Top half - four light curves spanning the entire width
+    # and stacked on top of each other (share x-axis)
+    # raw, detrended, corrected, second search
+    lc_grid = gridspec.GridSpecFromSubplotSpec(4,1,
+                                               subplot_spec=split_grid[0],
+                                               hspace=0)
+    # to access axes: ax = plt.subplot(grid[i(,j)])
+
+    cols = ["raw","det","corr","sec"]
+    colors = ["k","r","b","g"]
+    ctitles = ["Raw","Detrend","Correct","Second"]
+    axes = []
+    for i, colname in enumerate(cols):
+        axes.append(plt.subplot(lc_grid[i]))
+        axes[i].plot(lcs["t"],lcs[colname],".",color=colors[i],
+                     label=ctitles[i])
+        axes[i].tick_params(labelbottom=False)
+        axes[i].set_yticklabels([])
+        axes[i].set_xlim(min(lcs["t"]))
+#        leg = axes[i].legend(loc=2,numpoints=1,borderaxespad=0,
+#                             frameon=False)
+#        for text in leg.get_texts():
+#            text.set_color(colors[i])
+        axes[i].set_ylabel(ctitles[i],color=colors[i])
+
+    axes[0].plot(lcs["t"],lcs["bulk_trend"],color=colors[1],lw=2)
+    axes[3].tick_params(labelbottom=True)
+    axes[3].set_xlabel("Time (d)")
+    #lc_grid.update(hspace=0)
+
+
+    # Bottom half - three columns of three plots each
+    # bottom 2 plots should be stacked together.
+    # columns: raw/det (whichever selected), corrected, second search
+    # rows: periodogram, phased lc, residuals
+    pgram_grid = gridspec.GridSpecFromSubplotSpec(1,3,
+                                        subplot_spec=split_grid[1])
+    phased_grid = gridspec.GridSpecFromSubplotSpec(2,3,hspace=0,
+                                        subplot_spec=split_grid[2])
+    # pgram axes
+    paxes = []
+    # Phased axes
+    haxes = []
+    pcols = [init_lc, "corr","sec"]
+    pcolors = [colors[initi],colors[2],colors[3]]
+    ptitles = [init_title,"Corrected","Secondary"]
+    maxy = 0
+    for i, colname in enumerate(pcols):
+        paxes.append(plt.subplot(pgram_grid[i]))
+        paxes[i].plot(pgrams[colname+"_period"],
+                      pgrams[colname+"_power"],
+                      "-",color=pcolors[i])
+        paxes[i].set_xlabel("Period (d)")
+        paxes[i].set_xscale("log")
+        paxes[i].set_xlim(0.1,70)
+        paxes[i].set_xticklabels([0,0.1,1,10])
+        maxy = max(maxy,paxes[i].get_ylim()[-1])
+        paxes[i].set_title(ptitles[i],color=pcolors[i])
+
+        # pulling from the output file:
+        if i==0:
+            colname2 = "init"
+        else:
+            colname2 = colname
+        period = output_row[colname2+"_prot"]
+        paxes[i].axvline(period,ls="-",
+                         color="Grey")
+        paxes[i].axhline(output_row[colname2+"99"],ls="--",color="Grey")
+
+        haxes.append([plt.subplot(phased_grid[0,i]),
+                      plt.subplot(phased_grid[1,i])])
+        phased_t = lcs["t"] % period
+
+        haxes[i][0].plot(phased_t,lcs[colname],".",color=pcolors[i])
+        haxes[i][0].tick_params(labelbottom=False)
+        haxes[i][0].set_yticklabels([])
+        haxes[i][0].set_title(r"P$rot$={0:.2f}".format(period),
+                             color=pcolors[i])
+        haxes[i][0].set_xlim(0,period)
+
+        haxes[i][1].set_xlim(0,period)
+        haxes[i][1].set_xlabel("Phased t (d)")
+
+
+
+    paxes[0].set_ylabel("Power (max=1)")
+    for i, ax in enumerate(paxes):
+        ax.set_ylim(0,maxy)
+        ax.set_yticks(np.arange(0,maxy+0.01,0.1))
+        
+
+    plt.subplots_adjust(left=0.08,right=0.95,top=0.95,
+                        hspace=0.4,wspace=0.2)
+    plt.suptitle("EPIC{0}".format(epic),fontsize="x-large")

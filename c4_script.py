@@ -291,8 +291,10 @@ if __name__=="__main__":
     # need to fix that need for replacement, probably
     lc_dir = base_path.replace("k2spin","k2phot")+"lcs/"
 
-    lc_file = "ktwo210359769-c04.csv"
+    lc_file = "ktwo210408563-c04.csv"
+    epic = "210408563"
     ap = 6.5
+
 
 #    run_one(lc_file, 
 #            lc_dir=lc_dir, ap=ap,
@@ -301,4 +303,10 @@ if __name__=="__main__":
 #    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
 #             detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-    acf_list(base_path+"c4_lcs_aps.csv", lc_dir = "")
+#    acf_list(base_path+"c4_lcs_aps.csv", lc_dir = "")
+
+
+    res = at.read(base_path+"tables/c4_lcs_aps_results_2015-09-19_comments.csv")
+    plot.paper_lcs(epic,res[4])
+    plt.savefig("/home/stephanie/my_papers/hyadesk2/sample_lc.eps",
+                bbox_inches="tight")
