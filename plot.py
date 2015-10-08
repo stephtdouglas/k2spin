@@ -360,10 +360,14 @@ def paper_lcs(epic, output_row, campaign=4):
         axes[i].plot(lcs["t"],lcs[colname],".",color=colors[i],
                      label=ctitles[i])
         # Stacking them together, so don't need labels except for the last
-        axes[i].tick_params(labelbottom=False)
+        axes[i].tick_params(labelbottom=False, labelleft=False, labelright=True)
         axes[i].set_xlim(min(lcs["t"]))
+        axes[i].get_yaxis().get_major_formatter().set_useOffset(False)
+        plt.setp(axes[i].get_yticklabels()[::2], visible=False)
+        if i>0:
+            plt.setp(axes[i].get_yticklabels()[-1], visible=False)
         # yticklabels were taking up too much space, but probably do need smth
-        axes[i].set_yticklabels([])
+        #axes[i].set_yticklabels([])
 #        leg = axes[i].legend(loc=2,numpoints=1,borderaxespad=0,
 #                             frameon=False)
 #        for text in leg.get_texts():
