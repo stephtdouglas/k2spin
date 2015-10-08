@@ -347,7 +347,7 @@ def paper_lcs(epic, output_row, campaign=4):
     cmap=plt.cm.cubehelix
     color_norm = Normalize(vmin=0,vmax=5)
     scalar_map = cm.ScalarMappable(norm=color_norm,cmap=cmap)
-    mfcolors1 = scalar_map.to_rgba(np.arange(4))
+    mfcolors1 = scalar_map.to_rgba(np.arange(5))
 
     # Set up column names and colors (short names for labeling without overlap)
     cols = ["raw","det","corr","sec"]
@@ -387,9 +387,9 @@ def paper_lcs(epic, output_row, campaign=4):
     # bottom 2 plots should be stacked together.
     # columns: raw/det (whichever selected), corrected, second search
     # rows: periodogram, phased lc, residuals
-    pgram_grid = gridspec.GridSpecFromSubplotSpec(1,3,
+    pgram_grid = gridspec.GridSpecFromSubplotSpec(1,3,wspace=0,
                                         subplot_spec=split_grid[1])
-    phased_grid = gridspec.GridSpecFromSubplotSpec(2,3,hspace=0,
+    phased_grid = gridspec.GridSpecFromSubplotSpec(2,3,hspace=0,wspace=0,
                                         subplot_spec=split_grid[2])
     # pgram axes
     paxes = []
@@ -411,8 +411,9 @@ def paper_lcs(epic, output_row, campaign=4):
         paxes[i].set_xscale("log")
         paxes[i].set_xlim(0.1,70)
         paxes[i].set_xticklabels([0,0.1,1,10])
-        maxy = max(maxy,paxes[i].get_ylim()[-1])
         paxes[i].set_title(ptitles[i],color=pcolors[i])
+        # Only need yaxis on ends
+        paxes[i].set_yticklabels([])
 
         # Retrieve appropriate period and 99% threshold from the output file:
         if i==0:
@@ -420,42 +421,95 @@ def paper_lcs(epic, output_row, campaign=4):
         else:
             colname2 = colname
         period = output_row[colname2+"_prot"]
-        # Plot a vertical line at the fundmantal period
-        paxes[i].axvline(period,ls="-", color="Grey")
+        # Plot a triangle at the fundmantal period
+        tri_y = output_row[colname2+"_power"]*1.1
+        paxes[i].plot(period,tri_y,"v",mfc="DarkGrey")
+        #paxes[i].axvline(period,ls="-", color="Grey")
         # And a horizonal line at the 99% significance threshold
         paxes[i].axhline(output_row[colname2+"99"],ls="--",color="Grey")
 
+        maxy = max(maxy,paxes[i].get_ylim()[-1])
+
         # Now the axes for the phased light curve and residuals
-        haxes.append([plt.subplot(phased_grid[0,i]),
-                      plt.subplot(phased_grid[1,i])])
-        phased_t = lcs["t"] % period
+        # Share axes across columns
+        if i==0:
+            s0,s1 = None,None
+        else:
+            s0,s1 = haxes[0][0],haxes[0][1]
+        haxes.append([plt.subplot(phased_grid[0,i],sharey=s0),
+                      plt.subplot(phased_grid[1,i],sharey=s1)])
+        phased_t = (lcs["t"]-lcs["t"][0]) % period
 
         # Plot phased light curve
-        haxes[i][0].plot(phased_t,lcs[colname],".",color=pcolors[i])
-        haxes[i][0].tick_params(labelbottom=False)
+        if initi==0:
+            haxes[i][0].plot(phased_t,lcs[colname]/np.median(lcs[colname]),
+                             ".",color=pcolors[i])
+        else:
+            haxes[i][0].plot(phased_t,lcs[colname],".",color=pcolors[i])
+        haxes[i][0].tick_params(labelbottom=False,labelleft=False)
         haxes[i][0].set_yticklabels([])
         haxes[i][0].set_title(r"P$rot$={0:.2f}".format(period),
                              color=pcolors[i])
         haxes[i][0].set_xlim(0,period)
 
-
         # Plot phased residuals (eventually...)
         haxes[i][1].set_xlim(0,period)
         haxes[i][1].set_xlabel("Phased t (d)")
+        haxes[i][1].tick_params(labelleft=False)
 
+
+    # Overplot smoothed periodic curve on initial lightcurve
+    phased_t = (lcs["t"]-lcs["t"][0]) % output_row["init_prot"]
+    one_cycle = np.argsort(phased_t)
+    haxes[0][0].plot(phased_t[one_cycle], 
+                     lcs["init_trend"][one_cycle],color=pcolors[1],lw=2)
+    residuals = lcs[init_lc] - lcs["init_trend"]
+    haxes[0][1].plot(phased_t[one_cycle], 
+                     residuals[one_cycle],".",color=pcolors[0])
+    haxes[0][1].axhline(0,color=pcolors[1],lw=2)
 
     # Overplot smoothed periodic curve on corrected lightcurve
-    phased_t = lcs["t"] % output_row["corr_prot"]
+    phased_t = (lcs["t"]-lcs["t"][0]) % output_row["corr_prot"]
     one_cycle = np.argsort(phased_t)
-    #print lcs["t"][one_cycle]
     haxes[1][0].plot(phased_t[one_cycle], 
                      lcs["corr_trend"][one_cycle],color=pcolors[2],lw=2)
+    residuals = lcs["corr"] - lcs["corr_trend"]
+    haxes[1][1].plot(phased_t[one_cycle], 
+                     residuals[one_cycle],".",color=pcolors[1])
+    haxes[1][1].axhline(0,color=pcolors[2],lw=2)
 
+    # Overplot smoothed periodic curve on secondary lightcurve
+    phased_t = (lcs["t"]-lcs["t"][0]) % output_row["sec_prot"]
+    one_cycle = np.argsort(phased_t)
+    haxes[2][0].plot(phased_t[one_cycle], 
+                     lcs["sec_trend"][one_cycle],color=mfcolors1[-1],lw=2)
+    residuals = lcs["sec"] - lcs["sec_trend"]
+    haxes[2][1].plot(phased_t[one_cycle], 
+                     residuals[one_cycle],".",color=pcolors[2])
+    haxes[2][1].axhline(0,color=mfcolors1[-1],lw=2)
+
+    # Set tick/axis labels for periodograms
     paxes[0].set_ylabel("Power (max=1)")
-    for i, ax in enumerate(paxes):
+    paxes[2].tick_params(labelleft=False,labelright=True)
+    if maxy<=0.5:
+        tick_step = 0.1
+    else:
+        tick_step = 0.2
+    for ax in paxes:
         ax.set_ylim(0,maxy)
-        ax.set_yticks(np.arange(0,maxy+0.01,0.1))
-        
+        ax.set_yticks(np.arange(0,maxy+0.01,0.1),minor=True)
+        ax.set_yticks(np.arange(0,maxy+0.01,tick_step))
+    paxes[2].set_yticklabels(np.arange(0,maxy+0.01,tick_step))
+
+    # Set tick/axis labels for phased light curves
+    haxes[0][0].set_ylabel("Flux")
+    haxes[0][1].set_ylabel("Residuals")
+    for i in (0,1):
+        ticks = haxes[0][i].get_yticks()
+        haxes[2][i].set_yticklabels(ticks)
+        haxes[2][i].tick_params(labelright=True)
+        plt.setp(haxes[2][i].get_yticklabels()[::2], visible=False)
+    plt.setp(haxes[2][1].get_yticklabels()[-1], visible=False)
 
     plt.subplots_adjust(left=0.08,right=0.95,top=0.95,
                         hspace=0.4,wspace=0.2)

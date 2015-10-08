@@ -138,19 +138,19 @@ def run_one(filename,lc_dir, ap=None,
 #                                   light_curve.corr_trend,
 #                                   light_curve.sec_flux]))
         
-        lc_out.write("\nt,raw,bulk_trend,det,med,corr,corr_trend,sec")
-        for tt,rr,bb,dd,mm,cc,ct,ss in itertools.izip(light_curve.time,
-                                            light_curve.flux,
-                                            light_curve.bulk_trend,
-                                            light_curve.det_flux,
-                                            light_curve.median_flux,
-                                            light_curve.corrected_flux,
-                                            light_curve.corr_trend,
-                                            light_curve.sec_flux):
+        lc_out.write("\nt,raw,bulk_trend,det,init_trend,med,corr,corr_trend,sec,sec_trend")
+        for tt,rr,bb,dd,ii,mm,cc,ct,ss,st in itertools.izip(light_curve.time,
+                    light_curve.flux, light_curve.bulk_trend,
+                    light_curve.det_flux, light_curve.init_trend,
+                    light_curve.median_flux,
+                    light_curve.corrected_flux, light_curve.corr_trend,
+                    light_curve.sec_flux, light_curve.sec_trend):
             lc_out.write("\n{0:.6f},{1:.3f}".format(tt,rr))
             lc_out.write(",{0:.6f},{1:.6f}".format(bb,dd))
+            lc_out.write(",{0:.6f}".format(ii))
             lc_out.write(",{0:.6f},{1:.6f}".format(mm,cc))
             lc_out.write(",{0:.6f},{1:.6f}".format(ct,ss))
+            lc_out.write(",{0:.6f}".format(st))
         lc_out.close()
 
         # Write out periodograms
@@ -320,4 +320,6 @@ if __name__=="__main__":
     res = at.read(base_path+"tables/c4_lcs_aps_results_2015-09-19_comments.csv")
     plot.paper_lcs(epic,res[4])
     plt.savefig("/home/stephanie/my_papers/hyadesk2/sample_lc.eps",
+                bbox_inches="tight")
+    plt.savefig("/home/stephanie/Dropbox/plots_for_sharing/sample_lc.png",
                 bbox_inches="tight")

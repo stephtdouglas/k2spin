@@ -123,6 +123,14 @@ class LightCurve(object):
         # Get aliases for selected period
         eval_out = evaluate.test_pgram(self.init_periods_to_test, 
                                        self.init_pgram, self.power_threshold)
+
+        # Get phase-folded, smoothed trend
+        white_out2 = detrend.pre_whiten(self.time, self.use_flux, 
+                                        self.use_unc, self.init_prot,
+                                        which="phased")
+        self.init_trend = white_out2[2]
+
+ 
         if eval_out[-1]==False:
             logging.warning("Selected lightcurve is not clean")
         else:
@@ -432,8 +440,12 @@ class LightCurve(object):
                                         self.power_threshold)
         plot_aliases = [None, eval_out[2]]
 
-        # Plot!
+        white_out2 = detrend.pre_whiten(self.time, self.sec_flux, 
+                                        self.sec_unc, self.sec_prot,
+                                        which="phased")
+        self.sec_trend = white_out2[2]
 
+        # Plot!
         if to_plot:
             # Plot them up
             lcs = [[self.time, self.corrected_flux, self.corrected_unc],
