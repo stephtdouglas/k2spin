@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import ticker
 from matplotlib import gridspec
+import matplotlib.colors as mcolors
+from matplotlib.colors import Normalize
+import matplotlib.cm as cm
 import numpy as np
 import astropy.io.ascii as at
 
@@ -339,24 +342,42 @@ def paper_lcs(epic, output_row, campaign=4):
                                                hspace=0)
     # to access axes: ax = plt.subplot(grid[i(,j)])
 
+    # Set up colormap to make ensure contrast/readability
+    c = mcolors.ColorConverter().to_rgb
+    cmap=plt.cm.cubehelix
+    color_norm = Normalize(vmin=0,vmax=5)
+    scalar_map = cm.ScalarMappable(norm=color_norm,cmap=cmap)
+    mfcolors1 = scalar_map.to_rgba(np.arange(4))
+
+    # Set up column names and colors (short names for labeling without overlap)
     cols = ["raw","det","corr","sec"]
-    colors = ["k","r","b","g"]
+    colors = mfcolors1[np.array([0,2,1,3])]#["k","r","b","g"]
     ctitles = ["Raw","Detrend","Correct","Second"]
     axes = []
     for i, colname in enumerate(cols):
+        # Create subplot and plot appropriate light curve
         axes.append(plt.subplot(lc_grid[i]))
         axes[i].plot(lcs["t"],lcs[colname],".",color=colors[i],
                      label=ctitles[i])
+        # Stacking them together, so don't need labels except for the last
         axes[i].tick_params(labelbottom=False)
-        axes[i].set_yticklabels([])
         axes[i].set_xlim(min(lcs["t"]))
+        # yticklabels were taking up too much space, but probably do need smth
+        axes[i].set_yticklabels([])
 #        leg = axes[i].legend(loc=2,numpoints=1,borderaxespad=0,
 #                             frameon=False)
 #        for text in leg.get_texts():
 #            text.set_color(colors[i])
         axes[i].set_ylabel(ctitles[i],color=colors[i])
 
+    # Plot the bulk trend used for initial detrending on the first panel
     axes[0].plot(lcs["t"],lcs["bulk_trend"],color=colors[1],lw=2)
+    # Plot the median flux used to generate the corrected lightcurve
+    #axes[initi].plot(lcs["t"],lcs["med"],color=colors[2],lw=2)
+    # Plot the periodic trend removed to generate the secondary lightcurve
+    axes[2].plot(lcs["t"],lcs["corr_trend"],color=colors[3],lw=2)
+
+    # Add x-axis labels to the bottom panel
     axes[3].tick_params(labelbottom=True)
     axes[3].set_xlabel("Time (d)")
     #lc_grid.update(hspace=0)
@@ -374,11 +395,14 @@ def paper_lcs(epic, output_row, campaign=4):
     paxes = []
     # Phased axes
     haxes = []
+    # Only plotting 3 columns here
     pcols = [init_lc, "corr","sec"]
     pcolors = [colors[initi],colors[2],colors[3]]
     ptitles = [init_title,"Corrected","Secondary"]
+    # Want to set the same y-scaling for all 3 periodograms
     maxy = 0
     for i, colname in enumerate(pcols):
+        # Initialize axis and plot appropriate periodogram
         paxes.append(plt.subplot(pgram_grid[i]))
         paxes[i].plot(pgrams[colname+"_period"],
                       pgrams[colname+"_power"],
@@ -390,20 +414,23 @@ def paper_lcs(epic, output_row, campaign=4):
         maxy = max(maxy,paxes[i].get_ylim()[-1])
         paxes[i].set_title(ptitles[i],color=pcolors[i])
 
-        # pulling from the output file:
+        # Retrieve appropriate period and 99% threshold from the output file:
         if i==0:
             colname2 = "init"
         else:
             colname2 = colname
         period = output_row[colname2+"_prot"]
-        paxes[i].axvline(period,ls="-",
-                         color="Grey")
+        # Plot a vertical line at the fundmantal period
+        paxes[i].axvline(period,ls="-", color="Grey")
+        # And a horizonal line at the 99% significance threshold
         paxes[i].axhline(output_row[colname2+"99"],ls="--",color="Grey")
 
+        # Now the axes for the phased light curve and residuals
         haxes.append([plt.subplot(phased_grid[0,i]),
                       plt.subplot(phased_grid[1,i])])
         phased_t = lcs["t"] % period
 
+        # Plot phased light curve
         haxes[i][0].plot(phased_t,lcs[colname],".",color=pcolors[i])
         haxes[i][0].tick_params(labelbottom=False)
         haxes[i][0].set_yticklabels([])
@@ -411,10 +438,18 @@ def paper_lcs(epic, output_row, campaign=4):
                              color=pcolors[i])
         haxes[i][0].set_xlim(0,period)
 
+
+        # Plot phased residuals (eventually...)
         haxes[i][1].set_xlim(0,period)
         haxes[i][1].set_xlabel("Phased t (d)")
 
 
+    # Overplot smoothed periodic curve on corrected lightcurve
+    phased_t = lcs["t"] % output_row["corr_prot"]
+    one_cycle = np.argsort(phased_t)
+    #print lcs["t"][one_cycle]
+    haxes[1][0].plot(phased_t[one_cycle], 
+                     lcs["corr_trend"][one_cycle],color=pcolors[2],lw=2)
 
     paxes[0].set_ylabel("Power (max=1)")
     for i, ax in enumerate(paxes):

@@ -367,6 +367,7 @@ class LightCurve(object):
 
         self.corrected_flux = np.zeros(num_pts)
         self.corrected_unc = np.zeros(num_pts)
+        self.median_flux = np.zeros(num_pts)
 
         first_half = self.time<=2102
         x_pos1 = self.x_pos[first_half==True] 
@@ -393,6 +394,7 @@ class LightCurve(object):
             median_nearest = np.median(comp_f[min_ind])
             #logging.debug("This flux %f Median Nearest %f", 
             #              fval, median_nearest)
+            self.median_flux[i] = median_nearest
             self.corrected_flux[i] = fval / median_nearest
             self.corrected_unc[i] = self.use_unc[i] / median_nearest
 
@@ -414,6 +416,7 @@ class LightCurve(object):
                                        which="phased")
         detrended_flux = self.corrected_flux / white_out[2]
 
+        self.corr_trend = white_out[2]
         self.sec_flux = detrended_flux
         self.sec_unc = self.corrected_unc
 

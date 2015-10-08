@@ -129,17 +129,28 @@ def run_one(filename,lc_dir, ap=None,
                 lc_out.write("{0} = {1} ".format(k, detrend_kwargs[k]))
 
         # Now write out the LCs
-        lc_out.write("\nt,raw,bulk_trend,det,corr,sec")
-        for tt,rr,bb,dd,cc,ss in itertools.izip(light_curve.time,
+#        names = ["raw","bulk_trend","det","corr","corr_trend","sec"]
+#        lc_table = dict(zip(names,[light_curve.time,
+#                                   light_curve.flux,
+#                                   light_curve.bulk_trend,
+#                                   light_curve.det_flux,
+#                                   light_curve.corrected_flux,
+#                                   light_curve.corr_trend,
+#                                   light_curve.sec_flux]))
+        
+        lc_out.write("\nt,raw,bulk_trend,det,med,corr,corr_trend,sec")
+        for tt,rr,bb,dd,mm,cc,ct,ss in itertools.izip(light_curve.time,
                                             light_curve.flux,
                                             light_curve.bulk_trend,
                                             light_curve.det_flux,
+                                            light_curve.median_flux,
                                             light_curve.corrected_flux,
+                                            light_curve.corr_trend,
                                             light_curve.sec_flux):
             lc_out.write("\n{0:.6f},{1:.3f}".format(tt,rr))
-            lc_out.write(",{0:.6f}".format(bb))
-            lc_out.write(",{0:.6f},{1:.6f}".format(dd,cc))
-            lc_out.write(",{0:.6f}".format(ss))
+            lc_out.write(",{0:.6f},{1:.6f}".format(bb,dd))
+            lc_out.write(",{0:.6f},{1:.6f}".format(mm,cc))
+            lc_out.write(",{0:.6f},{1:.6f}".format(ct,ss))
         lc_out.close()
 
         # Write out periodograms
@@ -293,7 +304,7 @@ if __name__=="__main__":
 
     lc_file = "ktwo210408563-c04.csv"
     epic = "210408563"
-    ap = 6.5
+    ap = 5
 
 
 #    run_one(lc_file, 
