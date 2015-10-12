@@ -411,7 +411,7 @@ def paper_lcs(epic, output_row, campaign=4):
         paxes[i].plot(pgrams[colname+"_period"],
                       pgrams[colname+"_power"],
                       "-",color=pcolors[i])
-        paxes[i].set_xlabel("Period (d)")
+        paxes[i].set_xlabel(r"$P_{rot}$ (d)")
         paxes[i].set_xscale("log")
         paxes[i].set_xlim(0.1,70)
         paxes[i].set_xticklabels([0,0.1,1,10])
@@ -452,8 +452,8 @@ def paper_lcs(epic, output_row, campaign=4):
             haxes[i][0].plot(phased_t,lcs[colname],".",color=pcolors[i])
         haxes[i][0].tick_params(labelbottom=False,labelleft=False)
         haxes[i][0].set_yticklabels([])
-        haxes[i][0].set_title(r"P$rot$={0:.2f}".format(period),
-                             color=pcolors[i])
+        haxes[i][0].set_title(r"$P_{rot}$=%.2f" % period,
+                              color=pcolors[i])
         haxes[i][0].set_xlim(0,period)
 
         # Plot phased residuals (eventually...)
