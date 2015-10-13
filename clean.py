@@ -48,32 +48,34 @@ def smooth_and_clip(time, flux, unc_flux, clip_at=3, to_plot=False):
 
     # Smooth with supersmoother without much bass enhancement
     for i in range(3):
-        logging.debug(i)
         det_out = detrend.simple_detrend(ct, cf, cu, phaser=0)
         detrended_flux, detrended_unc, bulk_trend = det_out
 
         # Take the difference, and find the standard deviation of the residuals
-        logging.debug("flux, bulk trend, diff")
-        logging.debug(cf[:5])
-        logging.debug(bulk_trend[:5])
+#        logging.debug("flux, bulk trend, diff")
+#        logging.debug(cf[:5])
+#        logging.debug(bulk_trend[:5])
         f_diff = cf - bulk_trend
-        logging.debug(f_diff[:5])
+#        logging.debug(f_diff[:5])
         diff_std = np.zeros(len(f_diff))
         diff_std[ct<=2102] = np.std(f_diff[ct<=2102])
         diff_std[ct>2102] = np.std(f_diff[ct>2102])
-        logging.debug("std %f %f",diff_std[0], diff_std[-1])
+#        logging.debug("std %f %f",diff_std[0], diff_std[-1])
 
-        if to_plot: ax.plot(ct, bulk_trend)
+        if to_plot: 
+            ax.plot(ct, bulk_trend)
 
-        logging.debug("len tk %d diff %d", len(to_keep), len(f_diff))
+        logging.debug("%d len tk %d diff %d", i, len(to_keep), len(f_diff))
         # Clip outliers based on residuals this time
         to_keep = to_keep[abs(f_diff)<=(diff_std*clip_at)]
         ct = time[to_keep]
         cf = flux[to_keep]
         cu = unc_flux[to_keep]
-        if to_plot: ax.plot(ct, cf, '.',label=str(i))
+        if to_plot:  
+            ax.plot(ct, cf, '.',label=str(i))
 
-    if to_plot: ax.legend()
+    if to_plot:  
+        ax.legend()
 
     clip_time = time[to_keep]
     clip_flux = flux[to_keep]

@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astroML import time_series
 
+from k2spin.config import *
 from k2spin import utils
 from k2spin import clean
 from k2spin import detrend
@@ -114,6 +115,10 @@ class LightCurve(object):
 
         logging.info("Initial Prot %f Power %f", self.init_prot, 
                      self.init_power)
+        # get power at harmonics
+        self.init_harmonics = self._harmonics(self.init_prot, 
+                                              self.init_periods_to_test,
+                                              self.init_pgram)
 
         # Get aliases for selected period
         eval_out = evaluate.test_pgram(self.init_periods_to_test, 
@@ -142,7 +147,8 @@ class LightCurve(object):
 
             rd_fig.delaxes(rd_axes[3])
 
-            plt.savefig("plot_outputs/{}_raw_detrend.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_raw_detrend.png".format(base_path,
+                                                                     self.name))
             plt.close("all")
 
     def correct_and_fit(self, to_plot=True):
@@ -166,6 +172,10 @@ class LightCurve(object):
         self.corr_sigmas = sigmas
         self.corr_periods = periods_to_test
         self.corr_pgram = periodogram
+
+        self.corr_harmonics = self._harmonics(self.corr_prot,
+                                              self.corr_periods,
+                                              self.corr_pgram)
 
         if eval_out[-1]==False:
             logging.warning("Corrected lightcurve is not clean")
@@ -217,7 +227,8 @@ class LightCurve(object):
                                 mec=plot.color2)
             rd_axes[3].set_xlim(0, fund_prot)
 
-            plt.savefig("plot_outputs/{}_corrected.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_corrected.png".format(base_path, 
+                                                                   self.name))
 #            plt.show()
             plt.close("all")
 
@@ -248,7 +259,8 @@ class LightCurve(object):
             fig = plt.gcf()
             fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
                          detrend_kwargs["phaser"]),fontsize="x-large")
-            plt.savefig("plot_outputs/{}_detrend.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_detrend.png".format(base_path,
+                                                                 self.name))
 
     def _run_fit(self, use_lc, prot_lims=[0.1,70]):
         """Run a fit on a single lc, either "raw" or "detrended" 
@@ -268,9 +280,36 @@ class LightCurve(object):
         # Test the periodogram and pick the best period and power
         ls_out = prot.run_ls(tt, ff, uu, threshold=self.power_threshold,
                              prot_lims=prot_lims, run_bootstrap=True)
-        #fund_prot, fund_power, periods_to_test, periodogram, aliases, sigmas
+#        fund_prot, fund_power, periods_to_test, periodogram = ls_out[:4]
 
         return ls_out
+
+    def _harmonics(self, fund_prot, periods, powers):
+        """ Find 1/2 and 2x harmonics."""
+
+        if fund_prot > (2 * min(periods)):
+#            logging.debug("fund P %f half P %f", fund_prot, max(periods))
+            half_fund = fund_prot / 2.0
+            half_width = fund_prot * 0.01
+            half_region = np.where(abs(half_fund - periods) < half_width)[0]
+            half_peak = np.argmax(powers[half_region])
+            half_per = periods[half_region][half_peak]
+            half_pow = powers[half_region][half_peak]
+        else:
+            half_per, half_pow = np.nan, np.nan
+
+        if fund_prot < (0.5 * max(periods)):
+#            logging.debug("fund P %f max P %f", fund_prot, max(periods))
+            twice_fund = fund_prot * 2.0
+            twice_width = twice_fund * 0.01
+            twice_region = np.where(abs(twice_fund - periods) < twice_width)[0]
+            twice_peak = np.argmax(powers[twice_region])
+            twice_per = periods[twice_region][twice_peak]
+            twice_pow = powers[twice_region][twice_peak]
+        else:
+            twice_per, twice_pow = np.nan, np.nan
+
+        return half_per, half_pow, twice_per, twice_pow
 
     def _pick_lc(self, fund_power1, fund_power2):
         """Pick the raw or detrended lc to continue with by 
@@ -304,7 +343,8 @@ class LightCurve(object):
         logging.debug("_run_fit threshold %f", self.power_threshold)
 
         # Iteratively smooth, clip, and run a periodogram (period_cleaner)
-        dk = {"filename":"plot_outputs/{}_cleaning".format(self.name)}
+        dk = {"filename":"{0}plot_outputs/{1}_cleaning".format(base_path, 
+                                                               self.name)}
         pc_out = prot.detrend_for_correction(tt, ff, uu,
                                              prot_lims=prot_lims,
                                              to_plot=True, 
@@ -413,5 +453,6 @@ class LightCurve(object):
 
             rd_axes[0].plot(self.time, white_out[2], 'b-', lw=2)
 
-            plt.savefig("plot_outputs/{}_second_period.png".format(self.name))
+            plt.savefig("{0}plot_outputs/{1}_second_period.png".format(
+                        base_path,self.name))
         

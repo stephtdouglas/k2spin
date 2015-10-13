@@ -11,6 +11,7 @@ import supersmoother
 from astroML import time_series
 from gatspy.periodic import lomb_scargle_fast
 
+from k2spin.config import *
 from k2spin import utils
 from k2spin import clean
 from k2spin import evaluate
@@ -77,9 +78,9 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None,
             bs_periods[i] = periods_to_test[max_loc]
             bs_powers[i] = bs_pgram[max_loc]
 
-        logging.debug("Periods and Powers")
-        logging.debug(bs_periods)
-        logging.debug(bs_powers)
+#        logging.debug("Periods and Powers")
+#        logging.debug(bs_periods)
+#        logging.debug(bs_powers)
 
         sigmas = np.percentile(bs_powers, [99, 95])
         logging.debug("Fund power: %f 99p %f 95p %f", 
@@ -176,7 +177,8 @@ def detrend_for_correction(time, flux, unc_flux, prot_lims,
 
     # Set up the plot
     if to_plot==True:
-        filename = detrend_kwargs.get("filename","unknown_detrending.pdf")
+        filename = detrend_kwargs.get("filename",
+                                      base_path+"unknown_detrending.pdf")
         junk = detrend_kwargs.pop("filename")
         if filename.endswith(".pdf")==False:
             filename = filename+".pdf"
@@ -215,7 +217,7 @@ def detrend_for_correction(time, flux, unc_flux, prot_lims,
                             "fund power {1:.3f}".format(base_power, fund_power))
             break
         else:
-            logging.warning("prot {0:.3f} power {1:.3f} fund_div {2:.3f} {3}".format(fund_period, fund_power, fund_div, fd_round))
+            logging.info("prot {0:.3f} power {1:.3f} fund_div {2:.3f} {3}".format(fund_period, fund_power, fund_div, fd_round))
 
     if to_plot:
         pp.close()
