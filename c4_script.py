@@ -11,8 +11,8 @@ from k2spin.config import *
 from k2spin import lc
 from k2spin import k2io
 from k2spin import plot
-import hypra.prot.fix_kepler
-import hypra.prot.time_series
+from k2spin import acf
+from k2spin import fix_kepler
 
 today = date.today().isoformat()
 
@@ -234,8 +234,8 @@ def acf_one(filename, lc_dir, ap=None, output_f=None):
     """
 
     # Standard ACF with gap filling
-    t, y, dy = hypra.prot.fix_kepler.fill_gaps(time,flux,unc_flux)
-    acf_out = hypra.prot.time_series.run_acf(t, y, plot=True)
+    t, y, dy = fix_kepler.fill_gaps(time,flux,unc_flux)
+    acf_out = acf.run_acf(t, y, plot=True)
     plt.suptitle("EPIC {0}".format(epic))
     plt.savefig(plotname)
     plt.close("all")

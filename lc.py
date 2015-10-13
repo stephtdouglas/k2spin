@@ -214,7 +214,7 @@ class LightCurve(object):
 
             plotx = np.argsort(ptime)
             rd_axes[2].plot(ptime[plotx], fsine[plotx], color="lightgrey", lw=2)
-            rd_axes[2].set_ylim(min(fsine)*0.9, max(fsine)*1.1)
+#            rd_axes[2].set_ylim(min(fsine)*0.9, max(fsine)*1.1)
         
             use_residuals = self.use_flux - fsine
             cor_residuals = self.corrected_flux - fsine
