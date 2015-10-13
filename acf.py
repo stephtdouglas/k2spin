@@ -1,10 +1,11 @@
-"""Autocorrelation function for period measurement."""
-
 import logging
 
+from astropy.convolution import convolve as ap_convolve
+from astropy.convolution import Box1DKernel, Gaussian1DKernel
+from astroML.time_series import lomb_scargle, lomb_scargle_BIC, lomb_scargle_bootstrap
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import argrelextrema 
-
 
 def acf(times,yvals):
     """ 
@@ -33,7 +34,6 @@ def acf(times,yvals):
     return periods,ACF
 
 
-
 def find_prot(periods,ACF):
     """ 
     Determines the Prot from an ACF, using procedure in McQuillan et al. (2013)
@@ -41,11 +41,11 @@ def find_prot(periods,ACF):
 
     # Find all local maxima in the ACF. If none, return -1
 
-    max_loc = argrelextrema(ACF,np.greater,order=5)
+    max_loc = argrelextrema(ACF,np.greater,order=10)
     #print "max_loc",max_loc
     #print "edge",len(periods)
     if len(max_loc)==0:
-        return -1
+        return np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
     max_per = periods[max_loc[0]]
     #print "max_per",max_per
     max_ACF = ACF[max_loc[0]]
@@ -62,7 +62,14 @@ def find_prot(periods,ACF):
 
     ### Find peak heights 
     ## Ignore first peak if it's close to 0
-    if min_per[0]<1:
+    min_allowed_p = periods[0]*2
+    if len(min_per)==0:
+        logging.warning("No ACF minima found")
+        return np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
+    elif len(max_per)==0:
+        logging.warning("No ACF maxima found")
+        return np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
+    elif min_per[0]<min_allowed_p:
         peak_heights = np.zeros(len(max_per)-1)
         per_with_heights = max_per[1:]
         max_ACF_with_heights = max_ACF[1:]
@@ -77,8 +84,8 @@ def find_prot(periods,ACF):
         per_with_heights = per_with_heights[:-1]
         max_ACF_with_heights = max_ACF_with_heights[:-1]
         if len(peak_heights)==0:
-            print "No local minima to the right of any local maxima"
-            return -1
+            logging.warning("No local minima to the right of any local maxima")
+            return np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
 
     for i,max_p in enumerate(per_with_heights):
         # find the local minimum directly to the left of this maximum
@@ -98,18 +105,60 @@ def find_prot(periods,ACF):
         # if the second peak is highest, the first peak is probably
         # a half-period alias, so take the second peak.
         best_period = per_with_heights[1]
+        best_height = peak_heights[1]
+        which = 1
     else:
         # if the first peak is highest, it's most likely the period
         best_period = per_with_heights[0]
+        best_height = peak_heights[0]
+        which = 0
 
-    return best_period
+    return best_period, best_height, which, per_with_heights, peak_heights
 
 
 def run_acf(times,yvals,input_period=None,plot=False):
-    """ runs the acf function above """
+    """ runs the acf function above, and plots the result """
     
+    plot_ymin,plot_ymax = np.percentile(yvals,[1,99])
+
     periods, ACF = acf(times,yvals)
+#    # find the maximum of the first peak
+#    peak_locs = argrelextrema(ACF,np.greater,order=5)
+#    #print periods[peak_locs[0]]
+    find_out = find_prot(periods,ACF)
+    peak_loc = find_out[0]
+    print_period = "Prot = {:.2f}".format(peak_loc)
 
-    peak_loc = find_prot(periods,ACF)
+    if plot:
+        plt.figure(figsize=(10,8))
+    
+        ax1 = plt.subplot(221)
+        ax1.plot(times,yvals,'k-')
+        ax1.set_ylabel("normalized flux",fontsize="large")
+        ax1.set_xlabel("Time (d)",fontsize="large")
+    
+        ax2 = plt.subplot(222)
+        ax2.plot(periods,ACF)
+        ax2.set_xlabel(r"$\tau_K$",fontsize="x-large")
+        ax2.set_ylabel("ACF",fontsize="large")
+        plot2_ymin,plot2_ymax = ax2.get_ylim()
+        ax2.set_ylim(plot2_ymin,plot2_ymax)
+        if input_period:
+            ax2.plot((input_period,input_period),(plot2_ymin,plot2_ymax),"g:",lw=2,label="Input={:.2f}".format(input_period))
+    
+        ax2.plot((peak_loc,peak_loc),(plot2_ymin,plot2_ymax),'r--',label=print_period)
+        #ax2.plot(periods[peak_locs[0]],ACF[peak_locs[0]],'ro')
+        ax2.legend()
+        ax2.tick_params(labelleft=False,labelright=True)
+    
+        # Phase-fold the light-curve and plot the result
+        phase = times/peak_loc - np.asarray((times/peak_loc),np.int)
 
-    return peak_loc
+        ax3 = plt.subplot(223)
+        ax3.plot(phase,yvals,'k.')
+        ax3.set_xlabel("Phase")
+        ax3.set_ylabel("Flux")
+        ax3.set_ylim(plot_ymin*0.98,plot_ymax)
+        #print plot_ymin,plot_ymax
+    
+    return find_out
