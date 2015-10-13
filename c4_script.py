@@ -311,15 +311,8 @@ if __name__=="__main__":
 #            lc_dir=lc_dir, ap=ap,
 #            detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-#    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
-#             detrend_kwargs={"kind":"supersmoother","phaser":10})
+    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
+             detrend_kwargs={"kind":"supersmoother","phaser":10})
 
 #    acf_list(base_path+"c4_lcs_aps.csv", lc_dir = "")
 
-
-    res = at.read(base_path+"tables/c4_lcs_aps_results_2015-09-19_comments.csv")
-    plot.paper_lcs(epic,res[4])
-    plt.savefig("/home/stephanie/my_papers/hyadesk2/sample_lc.eps",
-                bbox_inches="tight")
-    plt.savefig("/home/stephanie/Dropbox/plots_for_sharing/sample_lc.png",
-                bbox_inches="tight")
