@@ -315,14 +315,15 @@ def paper_lcs(epic, output_row, campaign=4):
     else:
         init_title = "Detrended"
         initi=1
+    logging.debug("init: %s %s %d",init_lc,init_title, initi)
 
-    final_lc = output_row["use"]
-    if final_lc=="corr":
-        final_title = "Corrected"
-    elif final_lc=="sec":
-        final_title = "Secondary"
-    else:
-         final_title = init_title
+#    final_lc = output_row["use"]
+#    if final_lc=="corr":
+#        final_title = "Corrected"
+#    elif final_lc=="sec":
+#        final_title = "Secondary"
+#    else:
+#        final_title = init_title
 
     lc_dir = "/home/stephanie/code/python/k2spin/output_lcs/"
     lcs = at.read("{0}ktwo{1}-c0{2}_lcs.csv".format(lc_dir, epic,
@@ -468,7 +469,10 @@ def paper_lcs(epic, output_row, campaign=4):
     one_cycle = np.argsort(phased_t)
     haxes[0][0].plot(phased_t[one_cycle], 
                      lcs["init_trend"][one_cycle],color=pcolors[1],lw=2)
-    residuals = lcs[init_lc] - lcs["init_trend"]
+    if initi==0:
+        residuals = lcs[init_lc]/np.median(lcs[init_lc]) - lcs["init_trend"]
+    else:
+        residuals = lcs[init_lc] - lcs["init_trend"]
     haxes[0][1].plot(phased_t[one_cycle], 
                      residuals[one_cycle],".",color=pcolors[0])
     haxes[0][1].axhline(0,color=pcolors[1],lw=2)

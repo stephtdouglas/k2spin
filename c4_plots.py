@@ -13,18 +13,17 @@ today = date.today().isoformat()
 def plot_list(results_list):
     """
     """
-
     res = at.read(base_path+"tables/"+results_list)
     for i, epic in enumerate(res["EPIC"]):
-        outfilename = "ktwo{0}-c04_lc_analysis.png"
-        plot.paper_lcs(epic,res[4])
+        logging.info(epic)
+        outfilename = "ktwo{0}-c04_lc_analysis.png".format(epic)
+        plot.paper_lcs(epic,res[i])
         plt.savefig(base_path+"plot_outputs/"+outfilename,bbox_inches="tight")
         
 
 if __name__=="__main__":
 
-    logging.basicConfig(level=logging.DEBUG)#, 
-#                        format="%(asctime)s - %(name) - %(message)s")
+    plot_list("c4_lcs_aps_results_2015-10-13.csv")
 
     lc_file = "ktwo210408563-c04.csv"
     epic = "210408563"

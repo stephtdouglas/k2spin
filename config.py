@@ -2,7 +2,8 @@ import logging, os
 
 import matplotlib 
 
-logging.basicConfig(level=logging.WARNING)
+#logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
 
 if os.path.exists("/home/stephanie/Dropbox/")==True:
     base_path = "/home/stephanie/code/python/k2spin/"
