@@ -81,7 +81,7 @@ def run_one(filename,lc_dir, ap=None,
 
 
     light_curve.choose_initial(to_plot=True)
-    light_curve.correct_and_fit(to_plot=True)
+    light_curve.correct_and_fit(to_plot=True, n_closest=21)
     light_curve.multi_search(to_plot=True)
 
     plot.plot_xy(light_curve.x_pos, light_curve.y_pos, light_curve.time,
@@ -306,13 +306,16 @@ if __name__=="__main__":
     epic = "210408563"
     ap = 5
 
+    lc_file = "ktwo211201094-c04.csv"
+    epic = "211201094"
+    ap = 6.5
 
-#    run_one(lc_file, 
-#            lc_dir=lc_dir, ap=ap,
-#            detrend_kwargs={"kind":"supersmoother","phaser":10})
+    run_one(lc_file, 
+            lc_dir=lc_dir, ap=ap,
+            detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
-             detrend_kwargs={"kind":"supersmoother","phaser":10})
+#    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
+#             detrend_kwargs={"kind":"supersmoother","phaser":10})
 
 #    acf_list(base_path+"c4_lcs_aps.csv", lc_dir = "")
 

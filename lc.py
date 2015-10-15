@@ -159,13 +159,13 @@ class LightCurve(object):
                                                                      self.name))
             plt.close("all")
 
-    def correct_and_fit(self, to_plot=True):
+    def correct_and_fit(self, to_plot=True, n_closest=21):
         """Position-correct and perform a fit."""
         logging.debug("Fitting corrected lightcurve")
 
         cl_flux, cl_unc = self._clean_it(self.use)
 
-        self._xy_correct(correct_with=cl_flux)
+        self._xy_correct(correct_with=cl_flux, n_closest=n_closest)
 
         fit_out = self._run_fit([self.time, self.corrected_flux,
                                  self.corrected_unc])
@@ -377,7 +377,7 @@ class LightCurve(object):
         self.corrected_unc = np.zeros(num_pts)
         self.median_flux = np.zeros(num_pts)
 
-        first_half = self.time<=2102
+        first_half = self.time<=2264
         x_pos1 = self.x_pos[first_half==True] 
         y_pos1 = self.y_pos[first_half==True]
         x_pos2 = self.x_pos[first_half==False]
@@ -385,6 +385,8 @@ class LightCurve(object):
 
         for i, fval, xx, yy in itertools.izip(range(num_pts), self.use_flux,
                                               self.x_pos, self.y_pos):
+            logging.debug(i)
+            logging.debug(first_half[i])
             if first_half[i]:
                 comp_x, comp_y = x_pos1, y_pos1
                 comp_f = correct_with[first_half==True]
@@ -395,9 +397,11 @@ class LightCurve(object):
 #            comp_x, comp_y = self.x_pos, self.y_pos
 #            comp_f = self.use_flux
 
+            logging.debug(n_closest)
             pix_sep = np.sqrt((xx - comp_x)**2 + (yy - comp_y)**2)
             min_ind = np.argpartition(pix_sep, n_closest)[:n_closest]
-            #logging.debug(np.median(pix_sep[min_ind]))
+            logging.debug(min_ind)
+            logging.debug(np.median(pix_sep[min_ind]))
 
             median_nearest = np.median(comp_f[min_ind])
             #logging.debug("This flux %f Median Nearest %f", 

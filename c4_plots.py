@@ -23,15 +23,15 @@ def plot_list(results_list):
 
 if __name__=="__main__":
 
-    plot_list("c4_lcs_aps_results_2015-10-13.csv")
+#    plot_list("c4_lcs_aps_results_2015-10-13.csv")
 
     lc_file = "ktwo210408563-c04.csv"
     epic = "210408563"
     ap = 5
 
-#    res = at.read(base_path+"tables/c4_lcs_aps_results_2015-09-19_comments.csv")
-#    plot.paper_lcs(epic,res[4])
-#    plt.savefig("/home/stephanie/my_papers/hyadesk2/sample_lc.eps",
-#                bbox_inches="tight")
-#    plt.savefig("/home/stephanie/Dropbox/plots_for_sharing/sample_lc.png",
-#                bbox_inches="tight")
+    res = at.read(base_path+"tables/c4_lcs_aps_results_2015-10-15.csv")
+    plot.paper_lcs(epic,res[4])
+    plt.savefig("/home/stephanie/my_papers/hyadesk2/sample_lc.eps",
+                bbox_inches="tight")
+    plt.savefig("/home/stephanie/Dropbox/plots_for_sharing/sample_lc.png",
+                bbox_inches="tight")
