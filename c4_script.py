@@ -310,12 +310,12 @@ if __name__=="__main__":
     epic = "211201094"
     ap = 6.5
 
-    run_one(lc_file, 
-            lc_dir=lc_dir, ap=ap,
-            detrend_kwargs={"kind":"supersmoother","phaser":10})
+#    run_one(lc_file, 
+#            lc_dir=lc_dir, ap=ap,
+#            detrend_kwargs={"kind":"supersmoother","phaser":10})
 
-#    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
-#             detrend_kwargs={"kind":"supersmoother","phaser":10})
+    run_list(base_path+"c4_lcs_aps.csv", lc_dir = "",
+             detrend_kwargs={"kind":"supersmoother","phaser":10})
 
 #    acf_list(base_path+"c4_lcs_aps.csv", lc_dir = "")
 
