@@ -1,5 +1,25 @@
 Process K2 lightcurves and measure rotation periods.
 
-Authors: Stephanie Douglas and Kevin Covey
+Copyright 2015 Stephanie Douglas and Kevin Covey
 
-Not yet ready for distribution.
+Use at your own risk. This is free software made available under the MIT License. For details see the LICENSE file.
+
+################################################################################
+
+Some notes on using this code:
+
+- before use, modify base_path in config.py to point at your working directory.
+
+- in your working directory, you should create the following sub-folders: 
+-- output_lcs/
+-- plot_outputs/
+-- tables/
+
+- you'll also need the light curves output by k2phot somewhere on your computer
+
+- c4_script.py is the wrapper around the other codes. It will run a single star or a list of stars through this code. 
+
+- If you want to run a set of stars, use c4_lcs_aps.csv as an example. You can also just use a list of light curves and EPIC IDs. Put the full path to each file under the header "filename", and the EPIC numbers under "EPIC".
+
+- dependencies: astropy, matplotlib, numpy, scipy, astroML
+
