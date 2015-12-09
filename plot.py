@@ -522,4 +522,4 @@ def paper_lcs(epic, output_row, campaign=4):
 
     plt.subplots_adjust(left=0.08,right=0.95,top=0.95,
                         hspace=0.4,wspace=0.2)
-    plt.suptitle("EPIC{0}".format(epic),fontsize="x-large")
+    plt.suptitle("EPIC {0}".format(epic),fontsize="x-large")
