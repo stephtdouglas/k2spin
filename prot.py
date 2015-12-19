@@ -65,7 +65,7 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None,
     # (Use the same time points, but redraw the corresponding flux points
     # at random, allowing replacement)
     if run_bootstrap:
-        N_bootstraps = 10
+        N_bootstraps = 1000
         n_points = len(flux)
         ind = np.random.randint(0, n_points, (N_bootstraps, n_points))
         bs_periods, bs_powers = np.zeros(N_bootstraps), np.zeros(N_bootstraps)

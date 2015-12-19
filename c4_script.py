@@ -296,11 +296,11 @@ def run_list(listname, lc_dir, detrend_kwargs=None):
 
 if __name__=="__main__":
 
-    logging.basicConfig(level=logging.DEBUG)#, 
+    logging.basicConfig(level=logging.INFO)#, 
 #                        format="%(asctime)s - %(name) - %(message)s")
 
-    # need to fix that need for replacement, probably
-    lc_dir = base_path.replace("k2spin","k2phot")+"lcs/"
+#    # need to fix that need for replacement, probably
+#    lc_dir = base_path.replace("k2spin","k2phot")+"lcs/"
 
     lc_file = "ktwo210408563-c04.csv"
     epic = "210408563"
