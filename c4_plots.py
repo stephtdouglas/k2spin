@@ -24,11 +24,11 @@ def plot_list(results_list):
         plot.paper_lcs(epic,res[i])
         plt.savefig(base_path+"plot_outputs/"+outfilename,bbox_inches="tight")
 
-        if ((epic==210736105) or (epic==2107361050) or 
+        if ((epic==2107361051) or (epic==2107361050) or 
             (epic==210963067) or (epic==2109630670)):
+            # Use lc from smaller centroiding box for 210735105
+            # but daofind lc for 210963067
             continue
-        elif epic==2107361051:
-            save_epic = 210736105
         elif epic==2109630671:
             save_epic = 210963067
         else:
