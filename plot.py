@@ -444,7 +444,7 @@ def paper_lcs(epic, output_row, campaign=4):
             s0,s1 = haxes[0][0],haxes[0][1]
         haxes.append([plt.subplot(phased_grid[0,i],sharey=s0),
                       plt.subplot(phased_grid[1,i],sharey=s1)])
-        phased_t = (lcs["t"]-lcs["t"][0]) % period
+        phased_t = ((lcs["t"]-lcs["t"][0]) % period) / period
 
         # Plot phased light curve
         if initi==0:
@@ -456,16 +456,16 @@ def paper_lcs(epic, output_row, campaign=4):
         haxes[i][0].set_yticklabels([])
         haxes[i][0].set_title(r"$P_{rot}$=%.2f" % period,
                               color=pcolors[i])
-        haxes[i][0].set_xlim(0,period)
+        haxes[i][0].set_xlim(0,1)
 
         # Plot phased residuals (eventually...)
-        haxes[i][1].set_xlim(0,period)
-        haxes[i][1].set_xlabel("Phased t (d)")
+        haxes[i][1].set_xlim(0,1)
+        haxes[i][1].set_xlabel("Phase")
         haxes[i][1].tick_params(labelleft=False)
 
 
     # Overplot smoothed periodic curve on initial lightcurve
-    phased_t = (lcs["t"]-lcs["t"][0]) % output_row["init_prot"]
+    phased_t = ((lcs["t"]-lcs["t"][0]) % output_row["init_prot"]) / output_row["init_prot"]
     one_cycle = np.argsort(phased_t)
     haxes[0][0].plot(phased_t[one_cycle], 
                      lcs["init_trend"][one_cycle],color=pcolors[1],lw=2)
@@ -478,7 +478,7 @@ def paper_lcs(epic, output_row, campaign=4):
     haxes[0][1].axhline(0,color=pcolors[1],lw=2)
 
     # Overplot smoothed periodic curve on corrected lightcurve
-    phased_t = (lcs["t"]-lcs["t"][0]) % output_row["corr_prot"]
+    phased_t = ((lcs["t"]-lcs["t"][0]) % output_row["corr_prot"]) / output_row["corr_prot"] 
     one_cycle = np.argsort(phased_t)
     haxes[1][0].plot(phased_t[one_cycle], 
                      lcs["corr_trend"][one_cycle],color=pcolors[2],lw=2)
@@ -488,7 +488,7 @@ def paper_lcs(epic, output_row, campaign=4):
     haxes[1][1].axhline(0,color=pcolors[2],lw=2)
 
     # Overplot smoothed periodic curve on secondary lightcurve
-    phased_t = (lcs["t"]-lcs["t"][0]) % output_row["sec_prot"]
+    phased_t = ((lcs["t"]-lcs["t"][0]) % output_row["sec_prot"]) / output_row["sec_prot"]
     one_cycle = np.argsort(phased_t)
     haxes[2][0].plot(phased_t[one_cycle], 
                      lcs["sec_trend"][one_cycle],color=mfcolors1[-1],lw=2)
