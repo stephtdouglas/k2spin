@@ -82,9 +82,9 @@ def run_ls(time, flux, unc_flux, threshold, prot_lims=None,
 #        logging.debug(bs_periods)
 #        logging.debug(bs_powers)
 
-        sigmas = np.percentile(bs_powers, [99, 95])
+        sigmas = np.percentile(bs_powers, [99.9, 99, 95])
         logging.debug("Fund power: %f 99p %f 95p %f", 
-                      fund_power, sigmas[0], sigmas[1])
+                      fund_power, sigmas[1], sigmas[2])
     else:
         sigmas=None
 

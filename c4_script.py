@@ -99,21 +99,21 @@ def run_one(filename,lc_dir, ap=None,
         # Initial lightcurve result
         output_f.write(",{0:.4f},{1:.4f}".format(light_curve.init_prot,
                                                  light_curve.init_power))
-        s1, s2 = light_curve.init_sigmas
+        s1, s2 = light_curve.init_sigmas[:2]
         output_f.write(",{0:.4f},{1:.4f}".format(s1, s2))
         output_f.write(",{0:.4f},{1:.4f},{2:.4f},{3:.4f}".format(
                        *light_curve.init_harmonics[:]))
         # Corrected lightcurve result
         output_f.write(",{0:.4f},{1:.4f}".format(light_curve.corr_prot,
                                                  light_curve.corr_power))
-        s3, s4 = light_curve.corr_sigmas
+        s3, s4 = light_curve.corr_sigmas[:2]
         output_f.write(",{0:.4f},{1:.4f}".format(s3,s4))
         output_f.write(",{0:.4f},{1:.4f},{2:.4f},{3:.4f}".format(
                        *light_curve.corr_harmonics[:]))
         # Second period search
         output_f.write(",{0:.4f},{1:.4f}".format(light_curve.sec_prot,
                                                  light_curve.sec_power))
-        s5, s6 = light_curve.sec_sigmas
+        s5, s6 = light_curve.sec_sigmas[:2]
         output_f.write(",{0:.4f},{1:.4f}".format(s5,s6))
 
     if save_lcs==True:
@@ -278,11 +278,11 @@ def run_list(listname, lc_dir, detrend_kwargs=None):
     outfile = listname.split("/")[-1][:-4]+"_results_{}.csv".format(today)
     output_f = open("{0}tables/{1}".format(base_path,outfile),"w")
     output_f.write("filename,EPIC,ap,lc")
-    output_f.write(",init_prot,init_power,init99,init95")
+    output_f.write(",init_prot,init_power,init99.9,init99")
     output_f.write(",init_0.5prot, init_0.5power, init_2prot, init_2power")
-    output_f.write(",corr_prot,corr_power,corr99,corr95")
+    output_f.write(",corr_prot,corr_power,corr99.9,corr99")
     output_f.write(",corr_0.5prot, corr_0.5power, corr_2prot, corr_2power")
-    output_f.write(",sec_prot,sec_power,sec99,sec95")
+    output_f.write(",sec_prot,sec_power,sec99.9,sec99")
 
     for i, filename in enumerate(lcs["filename"]):
         logging.warning("starting %d %s",i,filename)
