@@ -22,7 +22,7 @@ class LightCurve(object):
     """
 
     def __init__(self, time, flux, unc_flux, x_pos, y_pos, name, 
-                 power_threshold=0.5, detrend_kwargs=None, to_plot=True):
+                 power_threshold=0.5, detrend_kwargs=None, to_plot=False):
         """Clean up the input data and sigma-clip it.
 
         input
@@ -62,7 +62,7 @@ class LightCurve(object):
         # Detrend the raw flux
         self._bulk_detrend(detrend_kwargs, to_plot)
 
-    def choose_initial(self, to_plot=True):
+    def choose_initial(self, to_plot=False):
         """Search raw and detrended LCs for periods, and decide whether there's
         a period there.
 
@@ -159,7 +159,7 @@ class LightCurve(object):
                                                                      self.name))
             plt.close("all")
 
-    def correct_and_fit(self, to_plot=True, n_closest=21):
+    def correct_and_fit(self, to_plot=False, n_closest=21):
         """Position-correct and perform a fit."""
         logging.debug("Fitting corrected lightcurve")
 
@@ -242,7 +242,7 @@ class LightCurve(object):
 
 
 
-    def _bulk_detrend(self, detrend_kwargs, to_plot=True):
+    def _bulk_detrend(self, detrend_kwargs, to_plot=False):
         """Smooth the rapid variations in the lightcurve and remove bulk trends.
 
         inputs
@@ -263,7 +263,7 @@ class LightCurve(object):
 
         logging.debug("len detrended t %d f %d u %d", len(self.time), 
                       len(self.det_flux),len(self.det_unc))
-        if to_plot:
+        if to_plot==True:
             fig = plt.gcf()
             fig.suptitle("{}; {} ({})".format(self.name,detrend_kwargs["kind"],
                          detrend_kwargs["phaser"]),fontsize="x-large")
@@ -355,7 +355,7 @@ class LightCurve(object):
                                                                self.name)}
         pc_out = prot.detrend_for_correction(tt, ff, uu,
                                              prot_lims=prot_lims,
-                                             to_plot=True, 
+                                             to_plot=False, 
                                              detrend_kwargs=dk)
         cl_flux, cl_unc = pc_out
 
@@ -419,7 +419,7 @@ class LightCurve(object):
         """
         pass
 
-    def multi_search(self, to_plot=True):
+    def multi_search(self, to_plot=False):
         """Search a lightcurve for a secondary signal."""
         # Start with the corrected lightcurve and its associated period
         # Phase on that period and remove it
