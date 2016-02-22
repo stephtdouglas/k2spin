@@ -173,7 +173,7 @@ def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
     detrended_flux = flux / bulk_trend
 
     detrended_unc = unc_flux
-
+    
     if to_plot:
         plt.figure(figsize=(10,8))
         ax1 = plt.subplot(311)
@@ -192,6 +192,6 @@ def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
         ax3.set_xlabel("Time (d)")
         ax3.set_ylabel("Flux / Bulk Trend",fontsize="large")
         ax3.tick_params(labelleft=False, labelright=True)
-
+    
     # Return detrended
     return detrended_flux, detrended_unc, bulk_trend 
