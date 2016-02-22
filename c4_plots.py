@@ -47,7 +47,7 @@ def plot_list(results_list):
 
 if __name__=="__main__":
 
-    plot_list("c4_lcs_aps_results_2015-12-18_comments.csv")
+    plot_list("c4_lcs_aps_results_2016-01-18_comments.csv")
 
 """
     lc_file = "ktwo210408563-c04.csv"
