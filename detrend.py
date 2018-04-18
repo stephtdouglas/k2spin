@@ -26,11 +26,11 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     kind: string, optional
         type of smoothing to use. Defaults to "supersmoother."
-        Other types are "boxcar", "linear" 
+        Other types are "boxcar", "linear"
 
     which: string, optional
-        whether to smooth the "phased" lightcurve (default) or the "full" 
-        lightcurve. 
+        whether to smooth the "phased" lightcurve (default) or the "full"
+        lightcurve.
 
     phaser: Float, optional (default=None)
         if kind="boxcar", phaser is the Half-width of the smoothing window.
@@ -42,9 +42,12 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
 
     """
 
+    # print(which, period, phaser)
+
     # phase the LC by the period
     if period is not None:
-        phased_time = utils.phase(time, period)
+        # phased_time = utils.phase(time, period)
+        phased_time = (time % period)
     else:
         phased_time = time
 
@@ -60,7 +63,7 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
             model = supersmoother.SuperSmoother(period=period)
 
             # Set up base arrays for phase for the fit
-            x_vals = np.linspace(0,max(phased_time),1000)
+            x_vals = np.linspace(0,max(phased_time)*1.001,1000)
 
             # Run a fit for the y phase
             y_fit = model.fit(phased_time, flux, unc_flux).predict(x_vals)
@@ -124,7 +127,15 @@ def pre_whiten(time, flux, unc_flux, period, kind="supersmoother",
         interp_func = interpolate.interp1d(x_vals, y_fit)
 
         if which.lower()=="phased":
+            # try:
             smoothed_flux = interp_func(phased_time)
+            # except ValueError:
+            #     # print(min(x_vals),max(x_vals))
+            #     # print(min(phased_time),max(phased_time))
+            #     smoothed_flux = np.ones_like(phased_time)
+            #     smoothed_flux[1:-1] = interp_func(phased_time[1:-1])
+            #     smoothed_flux[0] = smoothed_flux[1]
+            #     smoothed_flux[-1] = smoothed_flux[-2]
         elif which.lower()=="full":
             smoothed_flux = interp_func(time)
         else:
@@ -145,7 +156,7 @@ def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
     time, flux, unc_flux: array_like
 
     to_plot: boolean, default=False
-        whether to plot the results of the detrending. 
+        whether to plot the results of the detrending.
         Does not show or save the plot.
 
     detrend_kwargs:
@@ -165,8 +176,8 @@ def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
     # now (ab)use the Pre-whiten routine to calculate the overall trend
     # Maybe I should do something here to set alpha/the window size
     # for supersmoother
-    w_flux, w_unc, bulk_trend = pre_whiten(time, flux, unc_flux, 
-                                           period=None, which="full",  
+    w_flux, w_unc, bulk_trend = pre_whiten(time, flux, unc_flux,
+                                           period=None, which="full",
                                            **detrend_kwargs)
 
     # Actually detrend
@@ -194,4 +205,4 @@ def simple_detrend(time, flux, unc_flux, to_plot=False, **detrend_kwargs):
         ax3.tick_params(labelleft=False, labelright=True)
     
     # Return detrended
-    return detrended_flux, detrended_unc, bulk_trend 
+    return detrended_flux, detrended_unc, bulk_trend
